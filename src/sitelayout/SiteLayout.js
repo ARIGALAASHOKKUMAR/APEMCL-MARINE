@@ -44,6 +44,7 @@ import Icon from "react-native-vector-icons/Feather";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import labour_logo from "../../assets/logo2.png";
+import { ToastProvider } from "react-native-sprinkle-toast";
 
 const { width, height } = Dimensions.get("window");
 
@@ -384,7 +385,8 @@ const SiteLayout = ({
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#0F172A" barStyle="light-content" />
-
+      <ToastProvider>
+    
       <View style={styles.container}>
         {/* HEADER */}
         <View style={styles.header}>
@@ -571,7 +573,8 @@ const SiteLayout = ({
           </TouchableOpacity>
         </View> */}
       </View>
-
+      
+</ToastProvider>
       {/* LOGOUT CONFIRMATION MODAL */}
       <Modal
         visible={logoutVisible}
@@ -602,6 +605,7 @@ const SiteLayout = ({
           </View>
         </View>
       </Modal>
+      
     </SafeAreaView>
   );
 };
