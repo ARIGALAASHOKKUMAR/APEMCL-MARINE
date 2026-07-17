@@ -84,7 +84,6 @@ const SessionChecking = ({ navigation, children }) => {
   }
 
 
-  console.log("isProfileUpdated",isProfileUpdated);
   
 
   return <>{children}</>;

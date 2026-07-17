@@ -59,9 +59,11 @@ const ToastFunc = (msg, type) => {
   const toastType =
     type.toUpperCase() === "FAILURE" ? "error" : type.toLowerCase();
 
-  Toast.show({
+   Toast.show({
     message: msg,
-    type: toastType, // 'success', 'error', 'info', 'warning', or 'simple'
+    type: toastType,
+    placement: "bottom",
+    offsetTop: 200, // Increase this for more gap from the top
   });
 };
 

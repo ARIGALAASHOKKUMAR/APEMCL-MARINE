@@ -79,7 +79,6 @@ const HomeScreen = ({ navigation }) => {
       const res = await commonAPICall(MARINEMAINDASHBOARD, {}, "get", dispatch);
       if (res?.status === 200) {
         setDashboardData(res?.data || {});
-        console.log("rrr",res.data);
         
       } else {
         setDashboardData(null);

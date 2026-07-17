@@ -227,7 +227,6 @@ const SiteLayout = ({
   ];
 
   const handleParentPress = (parent) => {
-    console.log("Parent pressed:", parent);
     const hasChildren = parent.childs && parent.childs.length > 0;
 
     if (hasChildren) {
@@ -241,7 +240,6 @@ const SiteLayout = ({
             url: parent.targeturl,
           });
         } else {
-          console.log("Parent pressedsdfdfdfddfdkofcjdslkdld:", parent);
           navigation.navigate(parent.targeturl);
         }
       }
