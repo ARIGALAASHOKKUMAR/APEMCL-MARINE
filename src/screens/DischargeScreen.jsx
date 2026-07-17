@@ -187,7 +187,7 @@ const DischargeSummary = () => {
                   mode="date"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={onDateChange}
-                  maximumDate={new Date()}
+                  minimumDate={new Date()}
                 />
               )}
               
