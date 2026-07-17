@@ -232,7 +232,7 @@ const Activities = () => {
                     path,
                     'marineSealImage',
                     20971520,
-                    'all',
+                    'camera',
                     dispatch
                   );
                 }}
@@ -280,7 +280,7 @@ const Activities = () => {
                     path,
                     'startFlowMeterImage',
                     20971520,
-                    'all',
+                    'camera',
                     dispatch
                   );
                 }}
@@ -418,7 +418,7 @@ const Activities = () => {
                     path,
                     'endFlowMeterImage',
                     20971520,
-                    'all',
+                    'camera',
                     dispatch
                   );
                 }}

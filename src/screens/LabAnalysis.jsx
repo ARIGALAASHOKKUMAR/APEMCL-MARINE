@@ -423,7 +423,7 @@ const LabAnalysis = () => {
                     path,
                     'analysisReportFile',
                     20971520,
-                    'all',
+                    'camera',
                     dispatch
                   );
                 }}

@@ -28,11 +28,12 @@ import {
   commonAPICall,
   CONTEXT_HEADING,
   DISCHARGEFILTERFLAG,
+  DISCHARGENOTICE,
   MARINEDISCHARGEDETAILS,
   UPLOADANALYSISREPORT,
 } from '../utils/utils';
 import ImageBucketRN from '../utils/ImageBucketRN';
-
+ 
 const AnalysisReport = () => {
   const dispatch = useDispatch();
   const state = useSelector((state) => state.LoginReducer);
@@ -47,19 +48,19 @@ const AnalysisReport = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
   const [filterType, setFilterType] = useState(1); // 1 = Assigned, 0 = Unassigned
-
+ 
   // Validation schema for Assign Duty
   const validationSchema = Yup.object({
     dischargeAssignedTeamLeaderId: Yup.string().required('Required'),
     dischargeAssignedDate: Yup.string().required('Required'),
   });
-
+ 
   // Validation schema for Notice
   const noticeValidationSchema = Yup.object({
     noticeRemarks: Yup.string().required('required').min(10, 'Remarks must be at least 10 characters'),
-    noticeFile: Yup.string().required('required'),
+    noticeAttachment: Yup.string().required('required'),
   });
-
+ 
   const formik = useFormik({
     initialValues: {
       dischargeAssignedTeamLeaderId: '',
@@ -70,18 +71,18 @@ const AnalysisReport = () => {
       HandleSubmit(values);
     },
   });
-
+ 
   const noticeFormik = useFormik({
     initialValues: {
       noticeRemarks: '',
-      noticeFile: null,
+      noticeAttachment: null,
     },
     validationSchema: noticeValidationSchema,
     onSubmit: (values) => {
       HandleNoticeSubmit(values);
     },
   });
-
+ 
   // API Calls
   const HandleSubmit = async (values) => {
     try {
@@ -104,20 +105,21 @@ const AnalysisReport = () => {
       setLoading(false);
     }
   };
-
+ 
   const HandleNoticeSubmit = async (values) => {
     try {
       setLoading(true);
       const payload = {
+        ...values,
         postingId: rowData?.posting_id,
-        noticeRemarks: values.noticeRemarks,
-        noticeSubject: values.noticeSubject || 'Notice for discharge violation',
-        noticeDate: moment().format('YYYY-MM-DD'),
-        industryName: rowData?.discharge_request_industry,
-        noticeFile: values.noticeFile,
+        // noticeRemarks: values.noticeRemarks,
+        // noticeSubject: values.noticeSubject || 'Notice for discharge violation',
+        // noticeDate: moment().format('YYYY-MM-DD'),
+        // industryName: rowData?.discharge_request_industry,
+        // noticeAttachment: values.noticeAttachment,
       };
-      
-      const res = await commonAPICall(UPLOADANALYSISREPORT, payload, 'post', dispatch);
+     
+      const res = await commonAPICall(DISCHARGENOTICE, payload, 'post', dispatch);
       if (res.status === 200) {
         noticeFormik.resetForm();
         setShowNoticeModal(false);
@@ -131,15 +133,15 @@ const AnalysisReport = () => {
       setLoading(false);
     }
   };
-
+ 
   const GetData = async (flag) => {
     try {
       setLoading(true);
       const res = await commonAPICall(ANALYSISREPORTS + flag, {}, 'get', dispatch);
-      
+     
       if (res.status === 200) {
         setData(res.data.MarineDischargeSummary || []);
-        
+       
       } else {
         setData([]);
       }
@@ -150,23 +152,23 @@ const AnalysisReport = () => {
       setLoading(false);
     }
   };
-
+ 
   useEffect(() => {
     GetData(1); // Initially load Assigned (1)
   }, []);
-
+ 
   // QR Code Scanning
   const handleBarCodeScanned = async ({ data: scannedData }) => {
     if (!scanning) return;
-    
+   
     setScanning(false);
     setQrModal(false);
-    
+   
     if (scannedData) {
       try {
         setLoading(true);
         const foundItem = data.find(item => item.posting_id === scannedData);
-        
+       
         if (foundItem) {
           setRowData(foundItem);
           setShowModal(true);
@@ -181,7 +183,7 @@ const AnalysisReport = () => {
       }
     }
   };
-
+ 
   const openScanner = async () => {
     if (!permission?.granted) {
       const { granted } = await requestPermission();
@@ -193,12 +195,12 @@ const AnalysisReport = () => {
     setScanning(true);
     setQrModal(true);
   };
-
+ 
   const closeScanner = () => {
     setScanning(false);
     setQrModal(false);
   };
-
+ 
   // Handle Date Change
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || tempDate;
@@ -207,13 +209,13 @@ const AnalysisReport = () => {
     const formattedDate = currentDate.toISOString().split('T')[0];
     formik.setFieldValue('dischargeAssignedDate', formattedDate);
   };
-
+ 
   // Handle Filter Change
   const handleFilterChange = (flag) => {
     setFilterType(flag);
     GetData(flag);
   };
-
+ 
   // Industry Limits
   const industryLimits = {
     "ANDHRA ORGANICS": {
@@ -350,7 +352,7 @@ const AnalysisReport = () => {
       cod: 250
     }
   };
-
+ 
   const defaultLimits = {
     ph: { min: 5.5, max: 9.0 },
     tds: 2100,
@@ -363,48 +365,48 @@ const AnalysisReport = () => {
     nitrate: 50,
     chromium: 0.1
   };
-
+ 
   const getIndustryLimitsByUsername = () => {
     const username = state?.username;
     if (!username) return defaultLimits;
-
+ 
     const normalizedUsername = username?.toUpperCase()?.trim();
     if (industryLimits[normalizedUsername]) {
       return industryLimits[normalizedUsername];
     }
-
+ 
     const matchedKey = Object.keys(industryLimits).find(
       (key) =>
         normalizedUsername.includes(key.toUpperCase()) ||
         key.toUpperCase().includes(normalizedUsername)
     );
-
+ 
     return matchedKey ? industryLimits[matchedKey] : defaultLimits;
   };
-
+ 
   const getValueColor = (value, limit, isPH = false) => {
     if (value === null || value === undefined || value === '' || value === '-' || limit === undefined) {
       return { isValid: true, color: 'green' };
     }
-
+ 
     const numericValue = parseFloat(value);
     let isValid = true;
-
+ 
     if (isPH) {
       isValid = numericValue >= limit?.min && numericValue <= limit?.max;
     } else {
       isValid = numericValue <= limit;
     }
-
+ 
     return {
       isValid: isValid,
       color: isValid ? 'green' : 'red'
     };
   };
-
+ 
   const showParameterInfo = (param) => {
     const value = param.value || "-";
-
+ 
     if (value === "-") {
       Alert.alert(
         param.key,
@@ -412,12 +414,12 @@ const AnalysisReport = () => {
       );
       return;
     }
-
+ 
     if (param.isPH) {
       const isValid =
         parseFloat(value) >= param.limit.min &&
         parseFloat(value) <= param.limit.max;
-
+ 
       Alert.alert(
         param.key,
         isValid
@@ -426,7 +428,7 @@ const AnalysisReport = () => {
       );
     } else {
       const isValid = parseFloat(value) <= param.limit;
-
+ 
       Alert.alert(
         param.key,
         isValid
@@ -435,9 +437,9 @@ const AnalysisReport = () => {
       );
     }
   };
-
+ 
   const userIndustryLimits = getIndustryLimitsByUsername();
-
+ 
   // Render Assign Duty Modal
   const renderAssignDutyModal = () => (
     <Modal
@@ -483,7 +485,7 @@ const AnalysisReport = () => {
                   </Text>
                 )}
             </View>
-
+ 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Assigning Date <Text style={styles.star}>*</Text></Text>
               <TouchableOpacity
@@ -504,17 +506,17 @@ const AnalysisReport = () => {
                 </Text>
                 <Icon name="calendar-outline" size={22} color="#666" />
               </TouchableOpacity>
-              
+             
               {showDatePicker && (
                 <DateTimePicker
                   value={tempDate}
                   mode="date"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={onDateChange}
-                  maximumDate={new Date()}
+                  minimumDate={new Date()}
                 />
               )}
-              
+             
               {formik.errors.dischargeAssignedDate &&
                 formik.touched.dischargeAssignedDate && (
                   <Text style={styles.errorText}>
@@ -522,7 +524,7 @@ const AnalysisReport = () => {
                   </Text>
                 )}
             </View>
-
+ 
             <TouchableOpacity
               style={styles.submitButton}
               onPress={formik.handleSubmit}
@@ -535,7 +537,7 @@ const AnalysisReport = () => {
       </View>
     </Modal>
   );
-
+ 
   // Render Notice Modal
   const renderNoticeModal = () => (
     <Modal
@@ -585,14 +587,14 @@ const AnalysisReport = () => {
                   </Text>
                 )}
             </View>
-
+ 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Attachment <Text style={styles.star}>*</Text></Text>
               <TouchableOpacity
                 style={[
                   styles.uploadButton,
-                  noticeFormik.errors.noticeFile &&
-                    noticeFormik.touched.noticeFile &&
+                  noticeFormik.errors.noticeAttachment &&
+                    noticeFormik.touched.noticeAttachment &&
                     styles.inputError,
                 ]}
                 onPress={() => {
@@ -600,46 +602,46 @@ const AnalysisReport = () => {
                   ImageBucketRN(
                     noticeFormik,
                     path,
-                    'noticeFile',
+                    'noticeAttachment',
                     20971520,
-                    'all',
+                    'camera',
                     dispatch
                   );
                 }}
               >
                 <Text style={styles.uploadButtonText}>Upload Attachment</Text>
               </TouchableOpacity>
-              {noticeFormik.values.noticeFile && (
+              {noticeFormik.values.noticeAttachment && (
                 <View style={styles.filePreview}>
-                  {noticeFormik.values.noticeFile.match(/\.(jpg|jpeg|png)$/i) ? (
+                  {noticeFormik.values.noticeAttachment.match(/\.(jpg|jpeg|png)$/i) ? (
                     <Image
-                      source={{ uri: noticeFormik.values.noticeFile }}
+                      source={{ uri: noticeFormik.values.noticeAttachment }}
                       style={styles.imagePreview}
                     />
-                  ) : noticeFormik.values.noticeFile.match(/\.pdf$/i) ? (
+                  ) : noticeFormik.values.noticeAttachment.match(/\.pdf$/i) ? (
                     <TouchableOpacity
                       style={styles.pdfPreview}
-                      onPress={() => Linking.openURL(noticeFormik.values.noticeFile)}
+                      onPress={() => Linking.openURL(noticeFormik.values.noticeAttachment)}
                     >
                       <Icon name="document-text-outline" size={24} color="red" />
                       <Text style={styles.pdfText}>Download PDF</Text>
                     </TouchableOpacity>
                   ) : (
-                    <Text style={styles.fileNameText}>{noticeFormik.values.noticeFile}</Text>
+                    <Text style={styles.fileNameText}>{noticeFormik.values.noticeAttachment}</Text>
                   )}
                 </View>
               )}
-              {noticeFormik.errors.noticeFile &&
-                noticeFormik.touched.noticeFile && (
+              {noticeFormik.errors.noticeAttachment &&
+                noticeFormik.touched.noticeAttachment && (
                   <Text style={styles.errorText}>
-                    {noticeFormik.errors.noticeFile}
+                    {noticeFormik.errors.noticeAttachment}
                   </Text>
                 )}
               <Text style={styles.hintText}>
                 Allowed formats: PDF, JPEG, PNG, DOC, DOCX (Max size: 5MB)
               </Text>
             </View>
-
+ 
             <TouchableOpacity
               style={styles.submitButton}
               onPress={noticeFormik.handleSubmit}
@@ -656,7 +658,7 @@ const AnalysisReport = () => {
       </View>
     </Modal>
   );
-
+ 
   // Render QR Scanner Modal
   const renderQRScannerModal = () => {
     if (!permission?.granted) {
@@ -685,7 +687,7 @@ const AnalysisReport = () => {
         </Modal>
       );
     }
-
+ 
     return (
       <Modal visible={qrModal} transparent animationType="slide" onRequestClose={closeScanner}>
         <View style={styles.modalOverlay}>
@@ -718,7 +720,7 @@ const AnalysisReport = () => {
       </Modal>
     );
   };
-
+ 
   // Render Filter Buttons
   const renderFilterButtons = () => (
     <View style={styles.filterContainer}>
@@ -729,10 +731,10 @@ const AnalysisReport = () => {
         ]}
         onPress={() => handleFilterChange(1)}
       >
-        <Icon 
-          name="checkmark-circle-outline" 
-          size={18} 
-          color={filterType === 1 ? '#fff' : '#2e7d32'} 
+        <Icon
+          name="checkmark-circle-outline"
+          size={18}
+          color={filterType === 1 ? '#fff' : '#2e7d32'}
         />
         <Text style={[
           styles.filterButtonText,
@@ -741,7 +743,7 @@ const AnalysisReport = () => {
           Assigned
         </Text>
       </TouchableOpacity>
-      
+     
       <TouchableOpacity
         style={[
           styles.filterButton,
@@ -749,10 +751,10 @@ const AnalysisReport = () => {
         ]}
         onPress={() => handleFilterChange(0)}
       >
-        <Icon 
-          name="close-circle-outline" 
-          size={18} 
-          color={filterType === 0 ? '#fff' : '#d32f2f'} 
+        <Icon
+          name="close-circle-outline"
+          size={18}
+          color={filterType === 0 ? '#fff' : '#d32f2f'}
         />
         <Text style={[
           styles.filterButtonText,
@@ -763,7 +765,7 @@ const AnalysisReport = () => {
       </TouchableOpacity>
     </View>
   );
-
+ 
   // Render Card
   const renderCard = ({ item, index }) => {
     const limits = userIndustryLimits;
@@ -777,7 +779,7 @@ const AnalysisReport = () => {
       };
       return pondMap[id] || pondMap[String(id)] || '-';
     };
-
+ 
     // Parameter configuration
     const parameters = [
       { key: 'TDS', value: item?.tds_value, limit: limits?.tds, isPH: false },
@@ -791,7 +793,7 @@ const AnalysisReport = () => {
       { key: 'Ammonical', value: item?.ammonical_nitrogen_value, limit: limits?.ammonical, isPH: false },
       { key: 'Chromium', value: item?.hexavalent_chromium_value, limit: limits?.chromium, isPH: false },
     ];
-
+ 
     return (
       <View style={styles.cardItem}>
         <View style={styles.cardHeaderItem}>
@@ -802,7 +804,7 @@ const AnalysisReport = () => {
             </View>
           </View>
         </View>
-
+ 
         <View style={styles.cardBodyItem}>
           <View style={styles.cardRow}>
             <View style={styles.cardLabelContainer}>
@@ -814,7 +816,7 @@ const AnalysisReport = () => {
               <Text style={styles.cardValue}>{item?.analysis_date?.split(' ')[0] || '-'}</Text>
             </View>
           </View>
-
+ 
           <View style={styles.cardRow}>
             <View style={styles.cardLabelContainer}>
               <Text style={styles.cardLabel}>Guard Pond</Text>
@@ -822,13 +824,13 @@ const AnalysisReport = () => {
             </View>
            
           </View>
-
+ 
           {/* Parameter Grid - 5 items per row with circles */}
           <View style={styles.parameterGrid}>
             {parameters.map((param, idx) => {
               const { isValid, color } = getValueColor(param.value, param.limit, param.isPH);
               const displayValue = param.value || '-';
-              
+             
               return (
                 <View key={idx} style={styles.parameterItem}>
                   <TouchableOpacity onPress={() => showParameterInfo(param)}>
@@ -851,7 +853,7 @@ const AnalysisReport = () => {
               );
             })}
           </View>
-
+ 
           <View style={styles.cardActions}>
             {isAssigned ? (
               <TouchableOpacity style={styles.disabledButton} disabled>
@@ -886,23 +888,23 @@ const AnalysisReport = () => {
       </View>
     );
   };
-
+ 
   return (
     <View style={styles.container}>
       {renderAssignDutyModal()}
       {renderNoticeModal()}
       {renderQRScannerModal()}
-
+ 
       <View>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>
             <Icon name="list" size={20} color="#000" /> Analysis Report - {state?.username || 'Industry'}
           </Text>
         </View>
-
+ 
         <View style={styles.cardBody}>
           {renderFilterButtons()}
-
+ 
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="green" />
@@ -927,7 +929,7 @@ const AnalysisReport = () => {
     </View>
   );
 };
-
+ 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1460,5 +1462,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
+ 
 export default AnalysisReport;
+ 

@@ -459,7 +459,7 @@ const SampleCollectionRequests = () => {
                     path,
                     "inletSealImage",
                     20971520,
-                    "all",
+                    "camera",
                     dispatch
                   );
                 }}
@@ -505,7 +505,7 @@ const SampleCollectionRequests = () => {
                     path,
                     "levelMeterImage",
                     20971520,
-                    "all",
+                    "camera",
                     dispatch
                   );
                 }}
