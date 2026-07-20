@@ -106,6 +106,9 @@ const LabAnalysis = () => {
 
       if (res.status === 200) {
         setData(res.data.MarineDischargePostingDetails);
+
+        console.log("reee",res.data.MarineDischargePostingDetails[0]);
+        
         
       } else {
         setData([]);
@@ -584,74 +587,7 @@ const LabAnalysis = () => {
             </Text>
           </View>
 
-          {/* {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="green" />
-              <Text style={styles.loadingText}>Loading...</Text>
-            </View>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={true}>
-              <View>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: 40 }]}>S.No</Text>
-                  <Text style={[styles.tableHeaderText, { width: 130 }]}>Industry</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>Request Date</Text>
-                  <Text style={[styles.tableHeaderText, { width: 100 }]}>Sample Id</Text>
-                  <Text style={[styles.tableHeaderText, { width: 100 }]}>Guard Pond</Text>
-                  <Text style={[styles.tableHeaderText, { width: 120 }]}>Assigned Date</Text>
-                  <Text style={[styles.tableHeaderText, { width: 80 }]}>Action</Text>
-                </View>
-
-                {data.length > 0 ? (
-                  data.map((item, index) => (
-                    <View key={index} style={styles.tableRow}>
-                      <Text style={[styles.tableCell, { width: 40, textAlign: 'center' }]}>
-                        {index + 1}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: 130 }]}>
-                        {item?.discharge_request_industry || '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: 120 }]}>
-                        {item?.discharge_request_date || '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: 100, textAlign: 'right' }]}>
-                        {item?.posting_id || '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: 100 }]}>
-                        {item?.guard_pond_id === 1 || item?.guard_pond_id === '1'
-                          ? 'Guard Pond-1'
-                          : item?.guard_pond_id === 2 || item?.guard_pond_id === '2'
-                          ? 'Guard Pond-2'
-                          : item?.guard_pond_id === 3 || item?.guard_pond_id === '3'
-                          ? 'Guard Pond-3'
-                          : item?.guard_pond_id === 4 || item?.guard_pond_id === '4'
-                          ? 'Guard Pond-4'
-                          : '-'}
-                      </Text>
-                      <Text style={[styles.tableCell, { width: 120 }]}>
-                        {item?.sample_collection_assigned_date || '-'}
-                      </Text>
-                      <View style={[styles.tableCell, { width: 80, alignItems: 'center' }]}>
-                        <TouchableOpacity
-                          style={styles.editIcon}
-                          onPress={() => {
-                            setScannedPostingId(item?.posting_id);
-                            setShowModal(true);
-                          }}
-                        >
-                          <Icon name="create-outline" size={22} color="green" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))
-                ) : (
-                  <View style={styles.noRecords}>
-                    <Text style={styles.noRecordsText}>No Records Found</Text>
-                  </View>
-                )}
-              </View>
-            </ScrollView>
-          )} */}
+         
         </View>
       </View>
     </ScrollView>

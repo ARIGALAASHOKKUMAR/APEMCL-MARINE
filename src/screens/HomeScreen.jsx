@@ -11,7 +11,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { commonAPICall, DASHBOARD_COUNTS, MARINEMAINDASHBOARD } from "../utils/utils"; // Assume DASHBOARD_COUNTS is the endpoint constant
+import { commonAPICall, MARINEMAINDASHBOARD } from "../utils/utils";
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -23,63 +23,121 @@ const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   // Define card configuration: label, icon, color for each key
-  const cardConfigs = [
-    {
-      key: "discharge_assignment_pending",
+  const cardConfigs = {
+    // Existing keys
+    discharge_assignment_pending: {
       label: "Discharge Pending",
       icon: "assignment-late",
       color: "#FF9800",
     },
-    {
-      key: "edit_request_approved",
+    edit_request_approved: {
       label: "Edit Approved",
       icon: "check-circle",
       color: "#4CAF50",
     },
-    {
-      key: "discharge_assignment_completed",
+    discharge_assignment_completed: {
       label: "Discharge Completed",
       icon: "assignment-turned-in",
       color: "#2196F3",
     },
-    {
-      key: "continue_next_day_requests",
+    continue_next_day_requests: {
       label: "Continue Next Day",
       icon: "today",
       color: "#9C27B0",
     },
-    {
-      key: "sample_assignment_completed",
+    sample_assignment_completed: {
       label: "Sample Completed",
       icon: "done-all",
       color: "#00BCD4",
     },
-    {
-      key: "edit_request_pending",
+    edit_request_pending: {
       label: "Edit Pending",
       icon: "edit",
       color: "#FF5722",
     },
-    {
-      key: "sample_assignment_pending",
+    sample_assignment_pending: {
       label: "Sample Pending",
       icon: "pending",
       color: "#FFC107",
     },
-    {
-      key: "edit_request_rejected",
+    edit_request_rejected: {
       label: "Edit Rejected",
       icon: "cancel",
       color: "#F44336",
     },
-  ];
+    analysis_completed: {
+      label: "Analysis Completed",
+      icon: "done-all",
+      color: "#4CAF50",
+    },
+    analysis_pending: {
+      label: "Analysis Pending",
+      icon: "pending",
+      color: "#FFC107",
+    },
+    // New keys from your backend response
+    discharge_completed: {
+      label: "Discharge Completed",
+      icon: "check-circle",
+      color: "#4CAF50",
+    },
+    discharge_in_progress: {
+      label: "Discharge In Progress",
+      icon: "hourglass-empty",
+      color: "#FF9800",
+    },
+    discharge_start_pending: {
+      label: "Discharge Start Pending",
+      icon: "pending",
+      color: "#FFC107",
+    },
+    sample_collection_completed: {
+      label: "Sample Collection Completed",
+      icon: "assignment-turned-in",
+      color: "#00BCD4",
+    },
+    sample_collection_pending: {
+      label: "Sample Collection Pending",
+      icon: "pending",
+      color: "#FFC107",
+    },
+  };
+
+  // Default configuration for unknown keys
+  const getDefaultConfig = (key) => {
+    // Generate a label from the key (convert snake_case to Title Case)
+    const label = key
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    // Random color based on key hash
+    const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F"];
+    const hash = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const color = colors[hash % colors.length];
+    
+    return {
+      label: label,
+      icon: "dashboard", // default icon
+      color: color,
+    };
+  };
+
+  // Get configuration for a key (either from cardConfigs or generate default)
+  const getConfig = (key) => {
+    if (cardConfigs[key]) {
+      return cardConfigs[key];
+    }
+    // If key not found, generate a default configuration
+    return getDefaultConfig(key);
+  };
 
   const fetchDashboardData = async () => {
     try {
       const res = await commonAPICall(MARINEMAINDASHBOARD, {}, "get", dispatch);
       if (res?.status === 200) {
         setDashboardData(res?.data || {});
-        
+        console.log("Dashboard Data:", res?.data);
       } else {
         setDashboardData(null);
       }
@@ -107,11 +165,26 @@ const HomeScreen = ({ navigation }) => {
     return dashboardData[key] ?? 0;
   };
 
+  // Get all keys from dashboard data and filter out zero values if needed
+  const getVisibleKeys = () => {
+    if (!dashboardData) return [];
+    // Get all keys from dashboardData
+    const keys = Object.keys(dashboardData);
+    // Optional: Filter out keys with zero value if you don't want to show them
+    // return keys.filter(key => dashboardData[key] > 0);
+    return keys;
+  };
+
   // Render a single card
-  const renderCard = (config) => {
-    const value = getValue(config.key);
+  const renderCard = (key) => {
+    const config = getConfig(key);
+    const value = getValue(key);
+    
+    // Skip rendering if value is 0 (optional)
+    // if (value === 0) return null;
+    
     return (
-      <View style={styles.card} key={config.key}>
+      <View style={styles.card} key={key}>
         <View style={[styles.iconContainer, { backgroundColor: config.color }]}>
           <Icon name={config.icon} size={28} color="#fff" />
         </View>
@@ -147,7 +220,7 @@ const HomeScreen = ({ navigation }) => {
           </View>
         ) : (
           <View style={styles.cardsGrid}>
-            {cardConfigs.map((config) => renderCard(config))}
+            {getVisibleKeys().map((key) => renderCard(key))}
           </View>
         )}
       </ScrollView>
@@ -194,7 +267,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   card: {
-    width: "48%", // two columns with gap
+    width: "48%",
     backgroundColor: "#FFFFFF",
     borderRadius: 12,
     paddingVertical: 20,
