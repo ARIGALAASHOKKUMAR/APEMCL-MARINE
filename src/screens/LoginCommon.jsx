@@ -23,6 +23,7 @@ import { commonAPICall, LOGIN_END_POINT, GENERATE_CAPTCHA } from '../utils/utils
 import { login } from '../actions';
 import { showErrorToast, showSuccessToast } from '../utils/showToast';
 import { useNavigation } from '@react-navigation/native';
+import { ToastProvider } from 'react-native-sprinkle-toast';
 
 const { width, height } = Dimensions.get('window');
 
@@ -162,6 +163,7 @@ const LoginCommon = () => {
 
   return (
     <View style={styles.screen}>
+      <ToastProvider>
       <ImageBackground 
 source={require('../../assets/MARINEBG.png')}
   style={styles.screen}
@@ -316,6 +318,7 @@ source={require('../../assets/MARINEBG.png')}
         </ScrollView>
       </KeyboardAvoidingView>
       </ImageBackground>
+      </ToastProvider>
     </View>
   );
 };

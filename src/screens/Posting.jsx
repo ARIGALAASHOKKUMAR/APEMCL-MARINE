@@ -222,7 +222,7 @@ const Posting = () => {
                 {item?.current_status || 'Pending'}
               </Text>
             </View>
-          <Text style={styles.cardPond}>{item?.guard_pond_id}</Text>
+          <Text style={styles.cardPond}>{item?.guardpond_name}</Text>
         </View>
 
         <View style={styles.cardBodyItem}>
