@@ -308,7 +308,7 @@ const DischargeSummary = () => {
             </View>
           </View>
 {userId!=="TEAML"&&(  <View style={[styles.cardActions]}>
-            {isAssigned ? (
+            {isAssigned &&activeFilter!==2? (
               <TouchableOpacity style={styles.disabledButton} disabled>
                 <Icon name="checkmark-circle" size={16} color="#fff" />
                 <Text style={styles.disabledButtonText}>Assigned</Text>
@@ -322,7 +322,7 @@ const DischargeSummary = () => {
                 }}
               >
                 <Icon name="person-add-outline" size={16} color="#fff" />
-                <Text style={styles.assignButtonText}>Assign Duty</Text>
+                <Text style={styles.assignButtonText}>{activeFilter === 2?"Re Assign Duty":"Assign Duty"}</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.noticeButton}>
