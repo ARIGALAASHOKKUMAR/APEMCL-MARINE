@@ -394,7 +394,8 @@ const DischargeSummary = () => {
                 Pending 
               </Text>
             </TouchableOpacity>
-              <TouchableOpacity
+            {userId!=="TEAML"&&(
+<TouchableOpacity
               style={[
                 styles.filterButton,
                 activeFilter === 2 && styles.filterButtonActive
@@ -408,6 +409,8 @@ const DischargeSummary = () => {
                 Continue 
               </Text>
             </TouchableOpacity>
+            )}
+              
           </View>
 
           {loading ? (
