@@ -406,7 +406,7 @@ const SampleCollectionRequests = () => {
                   mode="date"
                   display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                   onChange={onUpdateDateChange}
-                  maximumDate={new Date()}
+                  minimumDate={new Date()}
                 />
               )}
               
