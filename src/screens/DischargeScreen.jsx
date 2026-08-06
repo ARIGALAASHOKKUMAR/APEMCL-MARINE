@@ -97,9 +97,12 @@ const DischargeSummary = () => {
   const filterData = async(id) => {
     const res = await commonAPICall(DISCHARGEFILTERFLAG+id,{},"get",dispatch)
     if(res.status === 200){
-      setActiveFilter(id)
       setData(res.data.MarineDischargeSummary)
     }
+    else{
+      setData([])
+    }
+    setActiveFilter(id)
   };
 
   useEffect(() => {

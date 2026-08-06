@@ -138,7 +138,7 @@ const Posting = () => {
         "post",
         dispatch,
       );
-      if (res.status === 201) {
+      if (res.status === 200) {
         setShowModal(false);
         resetForm();
         GetData();

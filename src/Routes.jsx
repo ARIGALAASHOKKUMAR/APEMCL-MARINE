@@ -13,17 +13,7 @@ import ProfileUpdate from "./sitelayout/ProfileUpdate";
 import ModalPopup from "./sitelayout/ModalPopup";
 import Overlay from "./sitelayout/Overlay";
 import { ToastProvider } from "react-native-sprinkle-toast";
-import JobSearchScreen from "./screens/JobSearch";
-import AppliedJobs from "./screens/AppliedJobs";
-import PostJob from "./screens/PostJob";
-import Workerposetdjobs from "./screens/Workerposetdjobs";
-import JobDetailsScreen from "./screens/JobDetailsScreen";
-import MapScreen from "./screens/MapScreen";
-import WelfareScreens from "./screens/WelfareScreens";
-import DistImage from "./screens/DistImage";
-import WorkerRegistration from "./screens/WorkerRegistrationForm";
-import WebViewScreen from "./sitelayout/WebViewScreen";
-import PaymentScreen from "./screens/PaymentTest";
+
 // import TicketBooking from "./Bluetooth/TicketBooking";
 import GenerateQrCode from "./screens/GenerateQrCode";
 import AssignQrcode from "./screens/AssignQrcode";
@@ -103,33 +93,7 @@ export default function Routes() {
                 )}
               </Stack.Screen>
 
-              <Stack.Screen name="WorkerTabs">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="WorkerTabs"
-                      scrollEnabled={false}
-                    >
-                      <WorkerRegistration {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-
-              <Stack.Screen name="FindJob">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="FindJob"
-                      scrollEnabled={false}
-                    >
-                      <JobSearchScreen {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
+             
 
 
                <Stack.Screen name="GenerateQrCode">
@@ -244,114 +208,7 @@ export default function Routes() {
                 )}
               </Stack.Screen>
 
-              <Stack.Screen name="WorkerSearch">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="WorkerSearch"
-                      scrollEnabled={false}
-                    >
-                      <JobSearchScreen {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-
-              <Stack.Screen name="AppliedJob">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="AppliedJob"
-                      scrollEnabled={false}
-                    >
-                      <AppliedJobs {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-              <Stack.Screen name="MapView">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="MapView"
-                      scrollEnabled={false}
-                    >
-                      <MapScreen {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-
-              <Stack.Screen name="JobPosting">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="JobPosting"
-                      scrollEnabled={false}
-                    >
-                      <PostJob {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-
-              <Stack.Screen name="EmployerJob">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="EmployerJob"
-                      scrollEnabled={false}
-                    >
-                      <Workerposetdjobs {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-
-              <Stack.Screen name="EmploJobDetailsyerJob">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="JobDetails"
-                      scrollEnabled={false}
-                    >
-                      <JobDetailsScreen {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-              <Stack.Screen name="AddAgency">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="AddAgency"
-                      scrollEnabled={false}
-                    >
-                      <DistImage {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
-              <Stack.Screen name="Welfarescreen">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="Welfarescreen"
-                      scrollEnabled={false}
-                    >
-                      <WelfareScreens {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
+              
             </Stack.Navigator>
           </NavigationContainer>
         </ToastProvider>
