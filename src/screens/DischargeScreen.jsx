@@ -222,6 +222,7 @@ const DischargeSummary = () => {
   // Render Card
 
   const userId = useSelector((state)=>state.LoginReducer.userId)
+    const state = useSelector((state)=>state.LoginReducer)
 
   const renderCard = ({ item, index }) => {
     const isAssigned = item?.discharge_assigned_team_leader_id !== null;
@@ -310,7 +311,7 @@ const DischargeSummary = () => {
               <Text style={styles.parameterValue}>{item?.hexavalent_chromium_value || '-'}</Text>
             </View>
           </View>
-{userId!=="TEAML"&&(  <View style={[styles.cardActions]}>
+{userId!=="TEAML"&&state.roleId!==2&&(  <View style={[styles.cardActions]}>
             {isAssigned &&activeFilter!==2? (
               <TouchableOpacity style={styles.disabledButton} disabled>
                 <Icon name="checkmark-circle" size={16} color="#fff" />

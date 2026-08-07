@@ -853,8 +853,8 @@ const AnalysisReport = () => {
               );
             })}
           </View>
- 
-          <View style={styles.cardActions}>
+             {state.roleId!==2&&(
+<View style={styles.cardActions}>
             {isAssigned ? (
               <TouchableOpacity style={styles.disabledButton} disabled>
                 <Icon name="person-add-outline" size={14} color="#fff" />
@@ -884,6 +884,8 @@ const AnalysisReport = () => {
               <Text style={styles.noticeButtonText}>Notice</Text>
             </TouchableOpacity>
           </View>
+             )}
+          
         </View>
       </View>
     );
