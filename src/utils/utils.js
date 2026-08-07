@@ -230,3 +230,5 @@ export const DISCHARGEFILTERFLAG="/api/user/marine-discharge-summary?summaryFlag
 export const ANALYSISREPORTS = "api/user/marine-discharge-summary?assignmentFlag="
 export const DISCHARGENOTICE = "api/user/saveMarineDischargeNotice"
 
+export const GETNOTICES = "api/user/marine-discharge-notice-details"
+
