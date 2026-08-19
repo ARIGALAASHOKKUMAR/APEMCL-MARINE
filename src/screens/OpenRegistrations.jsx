@@ -22,6 +22,8 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { useDispatch } from "react-redux";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { isImageUrl } from "../utils/CommonFunctions";
+import CommonImageViewer from "./CommonImageViewer";
 
 function OpenRegistrations() {
   const [data, setData] = useState([]);
@@ -36,6 +38,26 @@ function OpenRegistrations() {
   const [remarks, setRemarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const dispatch = useDispatch();
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageTitle, setSelectedImageTitle] = useState("");
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+
+  const viewImage = (imageUrl, title) => {
+    if (!imageUrl) {
+      Alert.alert("Info", "No image available");
+      return;
+    }
+    setSelectedImage(imageUrl);
+    setSelectedImageTitle(title || "Image Viewer");
+    setImageModalVisible(true);
+  };
+
+  const onClose = () => {
+    setImageModalVisible(false);
+    setSelectedImage(null);
+    setSelectedImageTitle("");
+  };
 
   // Status update validation schema
   const statusValidationSchema = Yup.object().shape({
@@ -586,9 +608,28 @@ function OpenRegistrations() {
 
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>GST Document:</Text>
-            <TouchableOpacity>
-              <Text style={[styles.detailValue, styles.linkText]}>View</Text>
-            </TouchableOpacity>
+            {isImageUrl(selectedData?.gst_upload) ? (
+              <TouchableOpacity
+                onPress={() =>
+                  viewImage(selectedData?.gst_upload, "GST Attachment")
+                }
+              >
+                <Text style={[styles.detailValue, styles.linkText]}>View</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedData?.gst_upload) {
+                    downloadFile(selectedData.gst_upload);
+                  }
+                }}
+              >
+                {/* <Icon name="download-outline" size={20} color="#fff" /> */}
+                <Text style={[styles.detailValue, styles.linkText]}>
+                  Download
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.detailRow}>
@@ -611,14 +652,37 @@ function OpenRegistrations() {
               {selectedData?.cto_expiry_date}
             </Text>
           </View>
-
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>CTO Document:</Text>
-            <TouchableOpacity>
-              <Text style={[styles.detailValue, styles.linkText]}>View</Text>
-            </TouchableOpacity>
+            {isImageUrl(selectedData?.cto_attachment) ? (
+              <TouchableOpacity
+                onPress={() =>
+                  viewImage(selectedData?.cto_attachment, "CTO Attachment")
+                }
+              >
+                <Text style={[styles.detailValue, styles.linkText]}>View</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedData?.cto_attachment) {
+                    downloadFile(selectedData.cto_attachment);
+                  }
+                }}
+              >
+                {/* <Icon name="download-outline" size={20} color="#fff" /> */}
+                <Text style={[styles.detailValue, styles.linkText]}>
+                  Download
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
-
+          <CommonImageViewer
+            visible={imageModalVisible}
+            imageUrl={selectedImage}
+            title={selectedImageTitle}
+            onClose={onClose}
+          />
           {isGeneratorMode && (
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Line Of Activity:</Text>

@@ -35,7 +35,6 @@ import {
 // At the bottom of the file:
 // import { NEWMANDALS, NEWVILLAGES } from "./utils/utils";
 
-
 export const Commonfeedback = ({ setModalStatus2, label, height = 4 }) => {
   const state = useSelector((state) => state.LoginReducer);
   const dispatch = useDispatch();
@@ -63,7 +62,7 @@ export const Commonfeedback = ({ setModalStatus2, label, height = 4 }) => {
           username,
           userId,
         },
-        "post"
+        "post",
       );
 
       if (response?.status === 200) {
@@ -103,7 +102,9 @@ export const Commonfeedback = ({ setModalStatus2, label, height = 4 }) => {
               style={styles.radioRow}
               onPress={() => setStatus(item)}
             >
-              <View style={[styles.radioOuter, selected && styles.radioSelected]}>
+              <View
+                style={[styles.radioOuter, selected && styles.radioSelected]}
+              >
                 {selected && <View style={styles.radioInner} />}
               </View>
               <Text style={styles.radioLabel}>
@@ -134,8 +135,8 @@ export const Commonfeedback = ({ setModalStatus2, label, height = 4 }) => {
 
       <TouchableOpacity style={styles.submitBtn} onPress={submitFeedback}>
         <Text style={styles.submitBtnText}>
-        <FontAwesome name="check" size={16} color="#fff" /> Submit Feedback
-      </Text>
+          <FontAwesome name="check" size={16} color="#fff" /> Submit Feedback
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -148,7 +149,7 @@ export const CommonLogout = async (
   token,
   navigation,
   type,
-  from
+  from,
 ) => {
   try {
     // 1. call API first while token is still available
@@ -159,7 +160,7 @@ export const CommonLogout = async (
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
     }
   } catch (error) {
@@ -167,7 +168,7 @@ export const CommonLogout = async (
   } finally {
     // 2. then clear redux state
     dispatch(logOut());
-dispatch(hideLoader());
+    dispatch(hideLoader());
     dispatch(hideMessage());
 
     if (navigation) {
@@ -189,11 +190,10 @@ export const LogoutListener = () => {
 export const generateCaptcha = async (
   setCaptchaId,
   setCaptchaImage,
-  setCount
+  setCount,
 ) => {
-
   console.log("testtasaja");
-  
+
   try {
     const response = await commonAPICall(GENERATE_CAPTCHA, {}, "get");
     if (response?.status === 200) {
@@ -327,19 +327,13 @@ export const numberToWordsWithPrecision = (num) => {
 
     if (n >= 100000) {
       result +=
-        toWordsBelowThousand(Math.floor(n / 100000), lang) +
-        " " +
-        lakh +
-        " ";
+        toWordsBelowThousand(Math.floor(n / 100000), lang) + " " + lakh + " ";
       n = n % 100000;
     }
 
     if (n >= 1000) {
       result +=
-        toWordsBelowThousand(Math.floor(n / 1000), lang) +
-        " " +
-        thousand +
-        " ";
+        toWordsBelowThousand(Math.floor(n / 1000), lang) + " " + thousand + " ";
       n = n % 1000;
     }
 
@@ -411,7 +405,7 @@ export const GetMandals = async (code, setMandals) => {
       const response = await commonAPICall(
         GETMANDALS + "distCode=" + code,
         {},
-        "get"
+        "get",
       );
 
       if (response?.status === 200) {
@@ -466,7 +460,7 @@ export const GetMandalsNew = async (distcode, setMandals) => {
       const response = await commonAPICall(
         `${MANDALSNEW}zoneCode=${effectiveDistCode}&mandalCode=0`,
         {},
-        "get"
+        "get",
       );
 
       if (response?.status === 200) {
@@ -491,7 +485,7 @@ export const GetVillagesNew = async (dist, mandal, setVillages) => {
       const response = await commonAPICall(
         `${VILLAGESNEW}distCode=${dist}&mandalCode=${effectiveMandalCode}`,
         {},
-        "get"
+        "get",
       );
 
       if (response?.status === 200) {
@@ -567,125 +561,120 @@ export const profileMenu = [
   },
 ];
 
-
-export const dists28 =  [
-	{
-		"dist_code" : 502,
-		"dist_name" : "ANANTAPUR"
-	},
-	{
-		"dist_code" : 503,
-		"dist_name" : "CHITTOOR"
-	},
-	{
-		"dist_code" : 504,
-		"dist_name" : "Y.S.R."
-	},
-	{
-		"dist_code" : 505,
-		"dist_name" : "EAST GODAVARI"
-	},
-	{
-		"dist_code" : 506,
-		"dist_name" : "GUNTUR"
-	},
-	{
-		"dist_code" : 510,
-		"dist_name" : "KRISHNA"
-	},
-	{
-		"dist_code" : 511,
-		"dist_name" : "KURNOOL"
-	},
-	{
-		"dist_code" : 515,
-		"dist_name" : "SPSR NELLORE"
-	},
-	{
-		"dist_code" : 517,
-		"dist_name" : "PRAKASAM"
-	},
-	{
-		"dist_code" : 519,
-		"dist_name" : "SRIKAKULAM"
-	},
-	{
-		"dist_code" : 520,
-		"dist_name" : "VISAKHAPATANAM"
-	},
-	{
-		"dist_code" : 521,
-		"dist_name" : "VIZIANAGARAM"
-	},
-	{
-		"dist_code" : 523,
-		"dist_name" : "WEST GODAVARI"
-	},
-	{
-		"dist_code" : 743,
-		"dist_name" : "PARVATHIPURAM MANYAM"
-	},
-	{
-		"dist_code" : 744,
-		"dist_name" : "ANAKAPALLI"
-	},
-	{
-		"dist_code" : 745,
-		"dist_name" : "ALLURI SITHARAMA RAJU"
-	},
-	{
-		"dist_code" : 746,
-		"dist_name" : "KAKINADA"
-	},
-	{
-		"dist_code" : 747,
-		"dist_name" : "DR.B.R.AMBEDKAR KONASEEMA"
-	},
-	{
-		"dist_code" : 748,
-		"dist_name" : "ELURU"
-	},
-	{
-		"dist_code" : 749,
-		"dist_name" : "NTR"
-	},
-	{
-		"dist_code" : 750,
-		"dist_name" : "BAPATLA"
-	},
-	{
-		"dist_code" : 751,
-		"dist_name" : "PALNADU"
-	},
-	{
-		"dist_code" : 752,
-		"dist_name" : "TIRUPATI"
-	},
-	{
-		"dist_code" : 753,
-		"dist_name" : "ANNAMAYYA"
-	},
-	{
-		"dist_code" : 754,
-		"dist_name" : "SRI SATHYA SAI"
-	},
-	{
-		"dist_code" : 755,
-		"dist_name" : "NANDYAL"
-	},
-	{
-		"dist_code" : 756,
-		"dist_name" : "MARKAPURAM"
-	},
-	{
-		"dist_code" : 757,
-		"dist_name" : "POLAVARAM"
-	}
-]
-
-
-
-
+export const dists28 = [
+  {
+    dist_code: 502,
+    dist_name: "ANANTAPUR",
+  },
+  {
+    dist_code: 503,
+    dist_name: "CHITTOOR",
+  },
+  {
+    dist_code: 504,
+    dist_name: "Y.S.R.",
+  },
+  {
+    dist_code: 505,
+    dist_name: "EAST GODAVARI",
+  },
+  {
+    dist_code: 506,
+    dist_name: "GUNTUR",
+  },
+  {
+    dist_code: 510,
+    dist_name: "KRISHNA",
+  },
+  {
+    dist_code: 511,
+    dist_name: "KURNOOL",
+  },
+  {
+    dist_code: 515,
+    dist_name: "SPSR NELLORE",
+  },
+  {
+    dist_code: 517,
+    dist_name: "PRAKASAM",
+  },
+  {
+    dist_code: 519,
+    dist_name: "SRIKAKULAM",
+  },
+  {
+    dist_code: 520,
+    dist_name: "VISAKHAPATANAM",
+  },
+  {
+    dist_code: 521,
+    dist_name: "VIZIANAGARAM",
+  },
+  {
+    dist_code: 523,
+    dist_name: "WEST GODAVARI",
+  },
+  {
+    dist_code: 743,
+    dist_name: "PARVATHIPURAM MANYAM",
+  },
+  {
+    dist_code: 744,
+    dist_name: "ANAKAPALLI",
+  },
+  {
+    dist_code: 745,
+    dist_name: "ALLURI SITHARAMA RAJU",
+  },
+  {
+    dist_code: 746,
+    dist_name: "KAKINADA",
+  },
+  {
+    dist_code: 747,
+    dist_name: "DR.B.R.AMBEDKAR KONASEEMA",
+  },
+  {
+    dist_code: 748,
+    dist_name: "ELURU",
+  },
+  {
+    dist_code: 749,
+    dist_name: "NTR",
+  },
+  {
+    dist_code: 750,
+    dist_name: "BAPATLA",
+  },
+  {
+    dist_code: 751,
+    dist_name: "PALNADU",
+  },
+  {
+    dist_code: 752,
+    dist_name: "TIRUPATI",
+  },
+  {
+    dist_code: 753,
+    dist_name: "ANNAMAYYA",
+  },
+  {
+    dist_code: 754,
+    dist_name: "SRI SATHYA SAI",
+  },
+  {
+    dist_code: 755,
+    dist_name: "NANDYAL",
+  },
+  {
+    dist_code: 756,
+    dist_name: "MARKAPURAM",
+  },
+  {
+    dist_code: 757,
+    dist_name: "POLAVARAM",
+  },
+];
 
 const styles = StyleSheet.create({
   feedbackContainer: {
@@ -754,3 +743,32 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
+export const isImageUrl = (url) => {
+  if (!url) return false;
+  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|bmp)$/i;
+  return imageExtensions.test(url);
+};
+
+// Check if URL is a PDF
+export const isPdfUrl = (url) => {
+  if (!url) return false;
+  return /\.pdf$/i.test(url);
+};
+
+
+
+// Download file using Linking
+export const downloadFile = (fileUrl) => {
+  if (!fileUrl) {
+    Alert.alert("Error", "No file available to download");
+    return;
+  }
+
+  try {
+    Linking.openURL(fileUrl);
+  } catch (error) {
+    console.error("Download error:", error);
+    Alert.alert("Error", "Failed to open file");
+  }
+};
