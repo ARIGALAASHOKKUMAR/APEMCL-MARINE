@@ -232,3 +232,9 @@ export const DISCHARGENOTICE = "api/user/saveMarineDischargeNotice"
 
 export const GETNOTICES = "api/user/marine-discharge-notice-details"
 
+
+
+
+export const MASTERDATAADDVEHICLEDETAILS = "api/user/vehicle-type-details"
+export const MASTERDATAADDVEHICLE = "api/user/createVehicleType"
+
