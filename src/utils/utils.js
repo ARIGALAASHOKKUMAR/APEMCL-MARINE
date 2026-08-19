@@ -237,4 +237,5 @@ export const GETNOTICES = "api/user/marine-discharge-notice-details"
 
 export const MASTERDATAADDVEHICLEDETAILS = "api/user/vehicle-type-details"
 export const MASTERDATAADDVEHICLE = "api/user/createVehicleType"
-
+export const LISTALLGENATOR = "api/user/registered-generators-list?"
+export const LISTALLRECEIVERS = "api/user/registered-receivers-list?"

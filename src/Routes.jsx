@@ -26,6 +26,7 @@ import LabAnalysis from "./screens/LabAnalysis";
 import Activities from "./screens/Activities";
 import Notices from "./screens/Notices";
 import MasterDataAddVehicleTypes from "./screens/MasterDataAddVehicleTypes";
+import OpenRegistrations from "./screens/OpenRegistrations";
 
 const Stack = createNativeStackNavigator();
 
@@ -232,6 +233,19 @@ export default function Routes() {
                       scrollEnabled={false}
                     >
                       <MasterDataAddVehicleTypes {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+                <Stack.Screen name="OpenRegistrations">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="OpenRegistrations"
+                      scrollEnabled={false}
+                    >
+                      <OpenRegistrations {...props} />
                     </SiteLayout>
                   </SessionChecking>
                 )}
