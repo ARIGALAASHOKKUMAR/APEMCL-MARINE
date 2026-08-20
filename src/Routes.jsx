@@ -27,6 +27,8 @@ import Activities from "./screens/Activities";
 import Notices from "./screens/Notices";
 import MasterDataAddVehicleTypes from "./screens/MasterDataAddVehicleTypes";
 import OpenRegistrations from "./screens/OpenRegistrations";
+import ManagePermittedQuantity from "./screens/ManagePermittedQuantity";
+import AddWasteDisposal from "./screens/AddWasteDisposal";
 
 const Stack = createNativeStackNavigator();
 
@@ -44,7 +46,7 @@ export default function Routes() {
             >
               {/* Login Screen */}
               <Stack.Screen name="Login" component={LoginCommon} />
-              
+
               <Stack.Screen name="WebViewScreen">
                 {(props) => (
                   <SiteLayout
@@ -96,10 +98,7 @@ export default function Routes() {
                 )}
               </Stack.Screen>
 
-             
-
-
-               <Stack.Screen name="GenerateQrCode">
+              <Stack.Screen name="GenerateQrCode">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
@@ -113,7 +112,7 @@ export default function Routes() {
                 )}
               </Stack.Screen>
 
-               <Stack.Screen name="SampleCollectionRequests">
+              <Stack.Screen name="SampleCollectionRequests">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
@@ -155,7 +154,7 @@ export default function Routes() {
                 )}
               </Stack.Screen>
 
-               <Stack.Screen name="AnalysisReports">
+              <Stack.Screen name="AnalysisReports">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
@@ -183,7 +182,7 @@ export default function Routes() {
                 )}
               </Stack.Screen>
 
-               <Stack.Screen name="Activities">
+              <Stack.Screen name="Activities">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
@@ -211,7 +210,7 @@ export default function Routes() {
                 )}
               </Stack.Screen>
 
-                <Stack.Screen name="Posting">
+              <Stack.Screen name="Posting">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
@@ -224,7 +223,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
-                <Stack.Screen name="MasterDataAddVehicleTypes">
+              <Stack.Screen name="MasterDataAddVehicleTypes">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
@@ -237,7 +236,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
-                <Stack.Screen name="OpenRegistrations">
+              <Stack.Screen name="OpenRegistrations">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
@@ -250,8 +249,32 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
-
-              
+              <Stack.Screen name="ManagePermittedQuantity">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="ManagePermittedQuantity"
+                      scrollEnabled={false}
+                    >
+                      <ManagePermittedQuantity {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="AddWasteDisposal">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="AddWasteDisposal"
+                      scrollEnabled={false}
+                    >
+                      <AddWasteDisposal {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
             </Stack.Navigator>
           </NavigationContainer>
         </ToastProvider>

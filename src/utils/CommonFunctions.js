@@ -772,3 +772,13 @@ export const downloadFile = (fileUrl) => {
     Alert.alert("Error", "Failed to open file");
   }
 };
+
+
+export const wasteTypes = [
+  { value: "1", label: "Effluent" },
+  { value: "2", label: "HW - Land Fillable" },
+  { value: "3", label: "HW - Incinerable" },
+  { value: "4", label: "HW - Recyclable" },
+  { value: "5", label: "HW - Utilizable" },
+  { value: "6", label: "Non Hazardous" },
+];
