@@ -878,7 +878,7 @@ const styles = StyleSheet.create({
   },
 
   parentHeaderCard: {
-    backgroundColor: "#4F46E5",
+    backgroundColor: "#057e1d",
     padding: 16,
     borderRadius: 20,
     marginBottom: 16,

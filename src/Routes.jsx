@@ -29,6 +29,7 @@ import MasterDataAddVehicleTypes from "./screens/MasterDataAddVehicleTypes";
 import OpenRegistrations from "./screens/OpenRegistrations";
 import ManagePermittedQuantity from "./screens/ManagePermittedQuantity";
 import AddWasteDisposal from "./screens/AddWasteDisposal";
+import RecentWasteDisposalList from "./screens/RecentWasteDisposalList";
 
 const Stack = createNativeStackNavigator();
 
@@ -271,6 +272,19 @@ export default function Routes() {
                       scrollEnabled={false}
                     >
                       <AddWasteDisposal {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="RecentWasteDisposalList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="RecentWasteDisposalList"
+                      scrollEnabled={false}
+                    >
+                      <RecentWasteDisposalList {...props} />
                     </SiteLayout>
                   </SessionChecking>
                 )}
