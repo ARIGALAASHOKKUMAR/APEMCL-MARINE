@@ -1386,7 +1386,7 @@ function AddWasteDisposal() {
                         Waste Type <Text style={styles.star}>*</Text>
                       </Text>
                       <View style={styles.row}>
-                        <View style={styles.col10}>
+                        <View style={(wasteType !== "" && wasteType !== "1")?styles.col10:styles.col12}>
                           <CustomDropdown
                             options={wasteTypes}
                             selectedValue={wasteType}
