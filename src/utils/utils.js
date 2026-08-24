@@ -253,4 +253,9 @@ export const EFFLUENTENDREADINGCHECK = "api/user/check-pending-effluent-readings
 export const EFFLUENTDISPOSALDETAILS = "api/user/effluent-disposal-details"
 export const ADDWASTEDISPOSALDETAILS = "api/user/add-waste-disposal-details"
 export const GETWASTEDISPOSALDETAILS = "api/user/waste-disposal-details/all"
+export const GENAPPROVEDDISPOSALDATA = "api/user/waste-disposal-interest-details?wasteTypeId=0&approved=true"
+export const TRANSPORTERLIST = "api/user/transportationVehicleSelectionDetails?vehicleId="
+export const ADDTRANSPORTVEHICLESELECTION = "api/user/add-transport-vehicle-selection"
+export const TRANSPORTVEHICLESELECTIONGET = "api/user/transport-vehicle-selection-details?wasteDisposalId="
+export const ALLREGISTRATIONS = "api/open/registration-details/all"
 

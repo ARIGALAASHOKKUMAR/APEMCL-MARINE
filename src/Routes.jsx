@@ -30,7 +30,10 @@ import OpenRegistrations from "./screens/OpenRegistrations";
 import ManagePermittedQuantity from "./screens/ManagePermittedQuantity";
 import AddWasteDisposal from "./screens/AddWasteDisposal";
 import RecentWasteDisposalList from "./screens/RecentWasteDisposalList";
-
+import InterestedWasteList from "./screens/InterestedWasteList";
+import GenApprovedList from "./screens/GenApprovedList";
+import TransportVehicleSelection from "./screens/TransportVehicleSelection";
+import TransportersList from "./screens/TransportersList";
 const Stack = createNativeStackNavigator();
 
 export default function Routes() {
@@ -285,6 +288,58 @@ export default function Routes() {
                       scrollEnabled={false}
                     >
                       <RecentWasteDisposalList {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="InterestedWasteList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="InterestedWasteList"
+                      scrollEnabled={false}
+                    >
+                      <InterestedWasteList {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="GenApprovedList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="GenApprovedList"
+                      scrollEnabled={false}
+                    >
+                      <GenApprovedList {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="TransportVehicleSelection">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="TransportVehicleSelection"
+                      scrollEnabled={false}
+                    >
+                      <TransportVehicleSelection {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="TransportersList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="TransportersList"
+                      scrollEnabled={false}
+                    >
+                      <TransportersList {...props} />
                     </SiteLayout>
                   </SessionChecking>
                 )}
