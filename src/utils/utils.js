@@ -251,4 +251,6 @@ export const POSTWASTEDISPOSALDETAILS = "api/user/add-waste-disposal-details"
 export const WASTEDISPOSALDETAILS = "api/user/waste-disposal-details?wasteTypeId="
 export const EFFLUENTENDREADINGCHECK = "api/user/check-pending-effluent-readings?cetpMembershipId="
 export const EFFLUENTDISPOSALDETAILS = "api/user/effluent-disposal-details"
+export const ADDWASTEDISPOSALDETAILS = "api/user/add-waste-disposal-details"
+export const GETWASTEDISPOSALDETAILS = "api/user/waste-disposal-details/all"
 

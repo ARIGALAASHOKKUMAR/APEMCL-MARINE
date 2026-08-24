@@ -283,7 +283,7 @@ function RecentWasteDisposalList({ navigation, route }) {
                     {/* Waste Details */}
                     <View style={styles.detailSection}>
                       <View style={styles.sectionHeader}>
-                        <Icon name="recycle" size={20} color="#2e7d32" />
+                        <Icon name="sync" size={20} color="#2e7d32" />
                         <Text style={styles.sectionTitle}>
                           {detailedData.waste_type_name} - Waste Details
                         </Text>
