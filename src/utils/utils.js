@@ -259,3 +259,6 @@ export const ADDTRANSPORTVEHICLESELECTION = "api/user/add-transport-vehicle-sele
 export const TRANSPORTVEHICLESELECTIONGET = "api/user/transport-vehicle-selection-details?wasteDisposalId="
 export const ALLREGISTRATIONS = "api/open/registration-details/all"
 
+// Add this to your utils.js file
+export const MARINEDISCHARGEDRILLDOWN = "/api/user/marine-discharge-dashboard-drilldown";
+

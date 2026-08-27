@@ -9,11 +9,14 @@ import {
   Dimensions,
   Animated,
   TouchableOpacity,
+  Modal,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { commonAPICall, MARINEMAINDASHBOARD } from "../utils/utils";
+import { commonAPICall, MARINEMAINDASHBOARD, MARINEDISCHARGEDRILLDOWN } from "../utils/utils";
 
 const { width } = Dimensions.get("window");
 
@@ -27,6 +30,12 @@ const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   
+  // Drilldown states
+  const [drillModalVisible, setDrillModalVisible] = useState(false);
+  const [drillData, setDrillData] = useState([]);
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
+  
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -38,92 +47,155 @@ const HomeScreen = ({ navigation }) => {
       label: "Assigned",
       icon: "assignment",
       gradient: ['#FF6B6B', '#FF8E53'],
-      category: "samplings"
+      category: "samplings",
+      drillType: "sample_assignment_pending"
     },
     sample_assignment_completed: {
       label: "Completed",
       icon: "check-circle",
       gradient: ['#00B894', '#00CEC9'],
-      category: "samplings"
+      category: "samplings",
+      drillType: "sample_collection_completed"
     },
     sample_collection_pending: {
       label: "Pending Collection",
       icon: "pending",
       gradient: ['#FDCB6E', '#F39C12'],
-      category: "samplings"
+      category: "samplings",
+      drillType: "sample_collection_pending"
     },
     sample_collection_completed: {
       label: "Collection Completed",
       icon: "assignment-turned-in",
       gradient: ['#0984E3', '#74B9FF'],
-      category: "samplings"
+      category: "samplings",
+      drillType: "sample_collection_completed"
     },
     discharge_assignment_pending: {
       label: "Assigned",
       icon: "assignment-late",
       gradient: ['#E17055', '#D63031'],
-      category: "discharge"
+      category: "discharge",
+      drillType: "discharge_assignment_pending"
     },
     discharge_assignment_completed: {
       label: "Completed",
       icon: "assignment-turned-in",
       gradient: ['#0984E3', '#6C5CE7'],
-      category: "discharge"
+      category: "discharge",
+      drillType: "discharge_assigned"
     },
     discharge_completed: {
       label: "Completed",
       icon: "check-circle",
       gradient: ['#00B894', '#00CEC9'],
-      category: "discharge"
+      category: "discharge",
+      drillType: "discharge_completed"
     },
     discharge_in_progress: {
       label: "In Progress",
       icon: "hourglass-empty",
       gradient: ['#FDCB6E', '#F39C12'],
-      category: "discharge"
+      category: "discharge",
+      drillType: "discharge_in_progress"
     },
     discharge_start_pending: {
       label: "Start Pending",
       icon: "pending",
       gradient: ['#E17055', '#D63031'],
-      category: "discharge"
+      category: "discharge",
+      drillType: "discharge_start_pending"
     },
     edit_request_approved: {
       label: "Approved",
       icon: "check-circle",
       gradient: ['#00B894', '#55EFC4'],
-      category: "edit"
+      category: "edit",
+      drillType: "edit_request_approved"
     },
     edit_request_pending: {
       label: "Pending",
       icon: "edit",
       gradient: ['#FDCB6E', '#F39C12'],
-      category: "edit"
+      category: "edit",
+      drillType: "edit_request_pending"
     },
     edit_request_rejected: {
       label: "Rejected",
       icon: "cancel",
       gradient: ['#E17055', '#D63031'],
-      category: "edit"
+      category: "edit",
+      drillType: "edit_request_rejected"
     },
     analysis_completed: {
       label: "Completed",
       icon: "done-all",
       gradient: ['#0984E3', '#74B9FF'],
-      category: "analysis"
+      category: "analysis",
+      drillType: "analysis_completed"
     },
     analysis_pending: {
       label: "Pending",
       icon: "pending",
       gradient: ['#FDCB6E', '#F39C12'],
-      category: "analysis"
+      category: "analysis",
+      drillType: "analysis_pending"
     },
     continue_next_day_requests: {
       label: "Continue Next Day",
       icon: "today",
       gradient: ['#6C5CE7', '#A29BFE'],
-      category: "continue"
+      category: "continue",
+      drillType: "continue_next_day"
     },
+  };
+
+  // Role-based drill types mapping
+  const getDrillTypeForRole = (key) => {
+
+    console.log("lkl",key);
+    
+
+    const roleDrillMap = {
+      // Admin role
+      '1': {
+        'sample_assignment_pending': 'sample_assignment_pending',
+        'sample_assignment_completed': 'sample_collection_completed',
+        'sample_collection_pending': 'sample_collection_pending',
+        'sample_collection_completed': 'sample_collection_completed',
+        'discharge_assignment_pending': 'discharge_assignment_pending',
+        'discharge_assignment_completed': 'discharge_assigned',
+        'discharge_completed': 'discharge_completed',
+        'discharge_in_progress': 'discharge_in_progress',
+        'discharge_start_pending': 'discharge_start_pending',
+        'edit_request_approved': 'edit_request_approved',
+        'edit_request_pending': 'edit_request_pending',
+        'edit_request_rejected': 'edit_request_rejected',
+        'analysis_completed': 'analysis_completed',
+        'analysis_pending': 'analysis_pending',
+        'continue_next_day_requests': 'continue_next_day',
+      },
+      // Industry role
+      '2': {
+        'sample_assignment_pending': 'pending_requests',
+        'sample_assignment_completed': 'completed_requests',
+        'sample_collection_pending': 'pending_requests',
+        'sample_collection_completed': 'completed_requests',
+        'discharge_assignment_pending': 'pending_requests',
+        'discharge_assignment_completed': 'completed_requests',
+        'discharge_completed': 'completed_requests',
+        'discharge_in_progress': 'pending_requests',
+        'discharge_start_pending': 'pending_requests',
+        'edit_request_approved': 'edit_request_approved',
+        'edit_request_pending': 'edit_request_pending',
+        'edit_request_rejected': 'edit_request_rejected',
+        'analysis_completed': 'completed_requests',
+        'analysis_pending': 'pending_requests',
+        'continue_next_day_requests': 'continue_next_day',
+      }
+    };
+    
+    return roleDrillMap[roleId]?.[key] || key;
   };
 
   const getDefaultConfig = (key) => {
@@ -148,6 +220,7 @@ const HomeScreen = ({ navigation }) => {
       icon: "dashboard",
       gradient: gradient,
       category: "other",
+      drillType: key,
     };
   };
 
@@ -211,6 +284,60 @@ const HomeScreen = ({ navigation }) => {
     return dashboardData[key] ?? 0;
   };
 
+  // Updated drilldown function to handle the response structure
+  const fetchDrillData = async (countType) => {
+    setDrillLoading(true);
+    try {
+      const url = `${MARINEDISCHARGEDRILLDOWN}?countType=${countType}`;
+      const res = await commonAPICall(url, {}, "get", dispatch);
+      
+      console.log("Drill API Response:", url,res.status);
+      
+      if (res?.status === 200) {
+        // Check if data exists and extract the drilldown array
+        let drillDataArray = [];
+        
+        // Try to extract data from various possible response structures
+        if (res?.data?.Marine_Discharge_Dashboard_Drilldown) {
+          drillDataArray = res.data.Marine_Discharge_Dashboard_Drilldown;
+        } else if (res?.data && Array.isArray(res.data)) {
+          drillDataArray = res.data;
+        } else if (res?.data?.data && Array.isArray(res.data.data)) {
+          drillDataArray = res.data.data;
+        } else if (res?.data?.Data && Array.isArray(res.data.Data)) {
+          drillDataArray = res.data.Data;
+        } else {
+          // If no array found, try to extract any array from the response
+          const dataKeys = Object.keys(res.data || {});
+          for (let key of dataKeys) {
+            if (Array.isArray(res.data[key]) && res.data[key].length > 0) {
+              drillDataArray = res.data[key];
+              break;
+            }
+          }
+        }
+        
+        console.log("Drill Data Array:", drillDataArray);
+        setDrillData(drillDataArray);
+      } else {
+        console.log("API Error - Status:", res?.status);
+        setDrillData([]);
+      }
+    } catch (error) {
+      console.log("Error fetching drill data:", error);
+      setDrillData([]);
+    } finally {
+      setDrillLoading(false);
+    }
+  };
+
+  const handleCardPress = (item) => {
+    const drillType = getDrillTypeForRole(item.key);
+    setSelectedCard(item);
+    setDrillModalVisible(true);
+    fetchDrillData(drillType);
+  };
+
   const getGroupedData = () => {
     if (!dashboardData) return {};
     
@@ -219,7 +346,7 @@ const HomeScreen = ({ navigation }) => {
     
     keys.forEach(key => {
       const value = getValue(key);
-      if (value === 0) return;
+      // if (value === 0) return;
       
       const config = getConfig(key);
       const category = config.category || "other";
@@ -288,6 +415,31 @@ const HomeScreen = ({ navigation }) => {
     return `${day}-${month}-${year}`;
   };
 
+  // Helper function to get status color
+  const getStatusColor = (status) => {
+    const statusMap = {
+      'MARINE DISCHARGE COMPLETED': '#4CAF50',
+      'COMPLETED': '#4CAF50',
+      'PENDING': '#F39C12',
+      'IN_PROGRESS': '#2196F3',
+      'IN PROGRESS': '#2196F3',
+      'APPROVED': '#4CAF50',
+      'REJECTED': '#F44336',
+      'ABORTED': '#F44336',
+      'START_PENDING': '#F39C12',
+      'START PENDING': '#F39C12',
+    };
+    return statusMap[status?.toUpperCase()] || '#999';
+  };
+
+  const getStatusStyle = (status) => {
+    const color = getStatusColor(status);
+    return {
+      backgroundColor: color + '15',
+      color: color,
+    };
+  };
+
   const renderCategory = (category, items) => {
     const categoryInfo = getCategoryInfo(category);
     const total = items.reduce((sum, item) => sum + item.value, 0);
@@ -352,7 +504,11 @@ const HomeScreen = ({ navigation }) => {
     const { config, value } = item;
     
     return (
-      <View style={[styles.card, { borderLeftColor: config.gradient[0], borderLeftWidth: 5 }]}>
+      <TouchableOpacity 
+        style={[styles.card, { borderLeftColor: config.gradient[0], borderLeftWidth: 5 }]}
+        onPress={() => handleCardPress(item)}
+        activeOpacity={0.7}
+      >
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
             <View style={[styles.cardIconContainer, { backgroundColor: config.gradient[0] + '15' }]}>
@@ -372,8 +528,11 @@ const HomeScreen = ({ navigation }) => {
               ]} 
             />
           </View>
+          {/* <View style={styles.drillIndicator}>
+            <Icon name="chevron-right" size={16} color="#999" />
+          </View> */}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -390,6 +549,17 @@ const HomeScreen = ({ navigation }) => {
       total += categoryTotal;
     });
     
+    // Handle drilldown for total tasks
+    const handleTotalPress = () => {
+      const drillType = roleId === '1' ? 'total_requests' : 'total_requests';
+      setSelectedCard({ 
+        key: 'total', 
+        config: { label: 'Total Tasks', gradient: ['#6C5CE7', '#A29BFE'] } 
+      });
+      setDrillModalVisible(true);
+      fetchDrillData(drillType);
+    };
+
     return (
       <Animated.View 
         style={[
@@ -400,25 +570,38 @@ const HomeScreen = ({ navigation }) => {
           }
         ]}
       >
-        <View style={styles.summaryHeader}>
-          <Text style={styles.summaryTitle}>📊 Overview</Text>
-          <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
-            <Icon name="refresh" size={22} color="#6C5CE7" />
-          </TouchableOpacity>
-        </View>
+       
         <View style={styles.summaryGrid}>
-          <View style={styles.summaryCard}>
+          <TouchableOpacity 
+            style={styles.summaryCard} 
+            onPress={handleTotalPress}
+            activeOpacity={0.7}
+          >
             <View style={[styles.summaryIcon, { backgroundColor: '#6C5CE7' }]}>
               <Icon name="assessment" size={24} color="#FFF" />
             </View>
             <Text style={styles.summaryValue}>{total}</Text>
             <Text style={styles.summaryLabel}>Total Tasks</Text>
-          </View>
+          </TouchableOpacity>
           {Object.entries(categoryTotals).map(([category, count]) => {
             const info = getCategoryInfo(category);
             if (count === 0) return null;
+            const handleCategoryPress = () => {
+              const drillType = roleId === '1' ? 'total_requests' : 'total_requests';
+              setSelectedCard({ 
+                key: category, 
+                config: { label: info.title, gradient: info.gradient } 
+              });
+              setDrillModalVisible(true);
+              fetchDrillData(drillType);
+            };
             return (
-              <View style={styles.summaryCard} key={category}>
+              <TouchableOpacity 
+                style={styles.summaryCard} 
+                key={category}
+                onPress={handleCategoryPress}
+                activeOpacity={0.7}
+              >
                 <View style={[styles.summaryIcon, { backgroundColor: info.gradient[0] }]}>
                   <Text style={styles.summaryEmoji}>{info.emoji}</Text>
                 </View>
@@ -426,7 +609,7 @@ const HomeScreen = ({ navigation }) => {
                   {count}
                 </Text>
                 <Text style={styles.summaryLabel}>{info.title}</Text>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -434,13 +617,109 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
+  // Updated renderDrillModal with better data display
+  const renderDrillModal = () => {
+    return (
+      <Modal
+        visible={drillModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setDrillModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={styles.modalTitle}>
+                  {selectedCard?.config?.label || 'Details'}
+                </Text>
+                <Text style={styles.modalSubtitle}>
+                  {drillData.length} records found
+                </Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setDrillModalVisible(false)}
+              >
+                <Icon name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            {drillLoading ? (
+              <View style={styles.modalLoading}>
+                <ActivityIndicator size="large" color="#6C5CE7" />
+                <Text style={styles.modalLoadingText}>Loading details...</Text>
+              </View>
+            ) : drillData.length === 0 ? (
+              <View style={styles.modalEmpty}>
+                <Icon name="inbox" size={60} color="#DDD" />
+                <Text style={styles.modalEmptyText}>No records found</Text>
+              </View>
+            ) : (
+              <FlatList
+                data={drillData}
+                keyExtractor={(item, index) => (item.postingid?.toString() || item.dischargerequestid || index.toString())}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity 
+                    style={styles.drillItem}
+                    // onPress={() => {
+                    //   // Navigate to detail screen with the item data
+                    //   setDrillModalVisible(false);
+                    //   navigation.navigate('DischargeDetail', { 
+                    //     postingId: item.postingid,
+                    //     requestId: item.dischargerequestid
+                    //   });
+                    // }}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.drillItemNumber}>
+                      <Text style={styles.drillItemIndex}>{index + 1}</Text>
+                    </View>
+                    <View style={styles.drillItemContent}>
+                      <Text style={styles.drillItemTitle}>
+                        {item.dischargerequestid || `Request ${index + 1}`}
+                      </Text>
+                      <Text style={styles.drillItemIndustry}>
+                        {item.industryname || 'N/A'}
+                      </Text>
+                      <View style={styles.drillItemDetails}>
+                        <View style={[styles.drillItemStatus, getStatusStyle(item.currentstatus || item.status)]}>
+                          <Text style={[styles.drillItemStatusText, { color: getStatusColor(item.currentstatus || item.status) }]}>
+                            {item.currentstatus || item.status || 'Unknown'}
+                          </Text>
+                        </View>
+                        {item.requestdate && (
+                          <Text style={styles.drillItemDate}>
+                            {item.requestdate}
+                          </Text>
+                        )}
+                      </View>
+                      {item.guardpondname && (
+                        <Text style={styles.drillItemLocation}>
+                          <Icon name="location-on" size={12} color="#999" /> {item.guardpondname}
+                        </Text>
+                      )}
+                    </View>
+                    {/* <View style={styles.drillItemArrow}>
+                      <Icon name="chevron-right" size={20} color="#6C5CE7" />
+                    </View> */}
+                  </TouchableOpacity>
+                )}
+                ItemSeparatorComponent={() => <View style={styles.drillSeparator} />}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.drillListContent}
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor="#6C5CE7" />
       
-      {/* Gradient Header */}
-     
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
@@ -470,13 +749,15 @@ const HomeScreen = ({ navigation }) => {
           </View>
         ) : (
           <View>
-            {renderSummaryStats()}
+            {/* {renderSummaryStats()} */}
             {Object.entries(getGroupedData()).map(([category, items]) => 
               renderCategory(category, items)
             )}
           </View>
         )}
       </ScrollView>
+
+      {renderDrillModal()}
     </SafeAreaView>
   );
 };
@@ -485,58 +766,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
-  },
-  headerGradient: {
-    backgroundColor: '#6C5CE7',
-    paddingTop: 10,
-    paddingBottom: 20,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFF',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    backgroundColor: '#FF6B6B',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: '700',
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -740,6 +969,139 @@ const styles = StyleSheet.create({
   cardProgressFill: {
     height: '100%',
     borderRadius: 2,
+  },
+  drillIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#FFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    minHeight: '50%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 2,
+  },
+  modalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalLoading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  modalLoadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#999',
+  },
+  modalEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  modalEmptyText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#999',
+  },
+  drillListContent: {
+    padding: 16,
+  },
+  drillItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  drillItemNumber: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  drillItemIndex: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  drillItemContent: {
+    flex: 1,
+  },
+  drillItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  drillItemIndustry: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 2,
+  },
+  drillItemDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    flexWrap: 'wrap',
+  },
+  drillItemStatus: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  drillItemStatusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  drillItemDate: {
+    fontSize: 12,
+    color: '#999',
+  },
+  drillItemLocation: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  drillItemArrow: {
+    padding: 8,
+  },
+  drillSeparator: {
+    height: 1,
+    backgroundColor: '#F0F0F0',
   },
 });
 
