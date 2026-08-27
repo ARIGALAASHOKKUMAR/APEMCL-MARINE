@@ -83,39 +83,15 @@ const Activities = () => {
     endReading: Yup.string().required('End Reading 1 is required'),
     endFlowMeterImage: Yup.string().required('Flow Meter Image 1 is required'),
     // Flow Meter 2 fields - conditional validation
-    dischargeAction2: Yup.string().test(
-      'dischargeAction2-required',
-      'Discharge Type 2 is required',
-      function(value) {
-        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-        if (hasSecondFlowMeter) {
-          return value && value.trim().length > 0;
-        }
-        return true;
-      }
-    ),
-    endReading2: Yup.string().test(
-      'endReading2-required',
-      'End Reading 2 is required',
-      function(value) {
-        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-        if (hasSecondFlowMeter) {
-          return value && value.trim().length > 0;
-        }
-        return true;
-      }
-    ),
-    endFlowMeterImage2: Yup.string().test(
-      'endFlowMeterImage2-required',
-      'Flow Meter Image 2 is required',
-      function(value) {
-        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-        if (hasSecondFlowMeter) {
-          return value && value.trim().length > 0;
-        }
-        return true;
-      }
-    ),
+    dischargeAction2: rowData?.has_second_flow_meter
+      ? Yup.string().required('Discharge Type 2 is required')
+      : Yup.string(),
+    endReading2: rowData?.has_second_flow_meter
+      ? Yup.string().required('End Reading 2 is required')
+      : Yup.string(),
+    endFlowMeterImage2: rowData?.has_second_flow_meter
+      ? Yup.string().required('Flow Meter Image 2 is required')
+      : Yup.string().nullable(),
   });
 
   // ================= START FORMIK =================
