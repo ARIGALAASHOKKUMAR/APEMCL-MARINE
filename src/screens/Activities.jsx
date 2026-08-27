@@ -166,7 +166,7 @@ const Activities = () => {
   
 
   // ================= RENDER START MODAL =================
-  const renderStartModal = () => (
+ const renderStartModal = () => (
     <Modal
       visible={showStartModal}
       transparent
@@ -182,7 +182,7 @@ const Activities = () => {
             </TouchableOpacity>
           </View>
           <ScrollView>
-            {/* Flow Meter Header */}
+            {/* Flow Meter 1 Header */}
             <View style={styles.flowMeterContainer}>
               <Icon name="speedometer-outline" size={20} color="#666" />
               <Text style={styles.flowMeterText}>
@@ -312,6 +312,135 @@ const Activities = () => {
               )}
             </View>
 
+            {/* Flow Meter 2 - Conditional Rendering */}
+            {rowData?.has_second_flow_meter && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.flowMeterContainer}>
+                  <Icon name="speedometer-outline" size={20} color="#666" />
+                  <Text style={styles.flowMeterText}>
+                    Flow Meter: <Text style={styles.flowMeterName}>Flow Meter-2</Text>
+                  </Text>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Start Reading 2 <Text style={styles.star}>*</Text></Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      startFormik.errors.startReading2 &&
+                        startFormik.touched.startReading2 &&
+                        styles.inputError,
+                    ]}
+                    placeholder="Enter Start Reading 2"
+                    keyboardType="numeric"
+                    value={String(startFormik.values.startReading2 || '')}
+                    onChangeText={startFormik.handleChange('startReading2')}
+                    onBlur={startFormik.handleBlur('startReading2')}
+                  />
+                  {startFormik.errors.startReading2 && startFormik.touched.startReading2 && (
+                    <Text style={styles.errorText}>{startFormik.errors.startReading2}</Text>
+                  )}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Marine Seal Image 2 <Text style={styles.star}>*</Text></Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.uploadButton,
+                      startFormik.errors.marineSealImage2 &&
+                        startFormik.touched.marineSealImage2 &&
+                        styles.inputError,
+                    ]}
+                    onPress={() => {
+                      const path = 'APEMCL/MARINE/';
+                      ImageBucketRN(
+                        startFormik,
+                        path,
+                        'marineSealImage2',
+                        20971520,
+                        'camera',
+                        dispatch
+                      );
+                    }}
+                  >
+                    <Text style={styles.uploadButtonText}>Upload Marine Seal Image 2</Text>
+                  </TouchableOpacity>
+                  {startFormik.values.marineSealImage2 && (
+                    <View style={styles.filePreview}>
+                      {startFormik.values.marineSealImage2.match(/\.(jpg|jpeg|png)$/i) ? (
+                        <Image
+                          source={{ uri: startFormik.values.marineSealImage2 }}
+                          style={styles.imagePreview}
+                        />
+                      ) : startFormik.values.marineSealImage2.match(/\.pdf$/i) ? (
+                        <TouchableOpacity
+                          style={styles.pdfPreview}
+                          onPress={() => Linking.openURL(startFormik.values.marineSealImage2)}
+                        >
+                          <Icon name="document-text-outline" size={24} color="red" />
+                          <Text style={styles.pdfText}>Download PDF</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <Text style={styles.fileNameText}>{startFormik.values.marineSealImage2}</Text>
+                      )}
+                    </View>
+                  )}
+                  {startFormik.errors.marineSealImage2 && startFormik.touched.marineSealImage2 && (
+                    <Text style={styles.errorText}>{startFormik.errors.marineSealImage2}</Text>
+                  )}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Flow Meter Image 2 <Text style={styles.star}>*</Text></Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.uploadButton,
+                      startFormik.errors.startFlowMeterImage2 &&
+                        startFormik.touched.startFlowMeterImage2 &&
+                        styles.inputError,
+                    ]}
+                    onPress={() => {
+                      const path = 'APEMCL/MARINE/';
+                      ImageBucketRN(
+                        startFormik,
+                        path,
+                        'startFlowMeterImage2',
+                        20971520,
+                        'camera',
+                        dispatch
+                      );
+                    }}
+                  >
+                    <Text style={styles.uploadButtonText}>Upload Flow Meter Image 2</Text>
+                  </TouchableOpacity>
+                  {startFormik.values.startFlowMeterImage2 && (
+                    <View style={styles.filePreview}>
+                      {startFormik.values.startFlowMeterImage2.match(/\.(jpg|jpeg|png)$/i) ? (
+                        <Image
+                          source={{ uri: startFormik.values.startFlowMeterImage2 }}
+                          style={styles.imagePreview}
+                        />
+                      ) : startFormik.values.startFlowMeterImage2.match(/\.pdf$/i) ? (
+                        <TouchableOpacity
+                          style={styles.pdfPreview}
+                          onPress={() => Linking.openURL(startFormik.values.startFlowMeterImage2)}
+                        >
+                          <Icon name="document-text-outline" size={24} color="red" />
+                          <Text style={styles.pdfText}>Download PDF</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <Text style={styles.fileNameText}>{startFormik.values.startFlowMeterImage2}</Text>
+                      )}
+                    </View>
+                  )}
+                  {startFormik.errors.startFlowMeterImage2 && startFormik.touched.startFlowMeterImage2 && (
+                    <Text style={styles.errorText}>{startFormik.errors.startFlowMeterImage2}</Text>
+                  )}
+                </View>
+              </>
+            )}
+
             <TouchableOpacity
               style={styles.submitButton}
               onPress={startFormik.handleSubmit}
@@ -324,9 +453,6 @@ const Activities = () => {
       </View>
     </Modal>
   );
-
-  console.log("startFormik",startFormik.values);
-  
 
   // ================= RENDER END MODAL =================
   const renderEndModal = () => (
@@ -348,16 +474,32 @@ const Activities = () => {
             {/* Start Reading Display */}
             <View style={styles.startReadingDisplay}>
               <View style={styles.startReadingRow}>
-                <Text style={styles.startReadingLabel}>Start Reading:</Text>
+                <Text style={styles.startReadingLabel}>Start Reading 1:</Text>
                 <Text style={styles.startReadingValue}>{rowData?.start_reading || '-'}</Text>
               </View>
               <View style={styles.flowMeterRow}>
                 <Icon name="speedometer-outline" size={18} color="#666" />
                 <Text style={styles.flowMeterText}>
-                  Flow Meter: <Text style={styles.flowMeterName}>Flow Meter-2</Text>
+                  Flow Meter: <Text style={styles.flowMeterName}>Flow Meter-1</Text>
                 </Text>
               </View>
             </View>
+
+            {/* Show Start Reading 2 if has_second_flow_meter is true */}
+            {rowData?.has_second_flow_meter&& (
+              <View style={styles.startReadingDisplay}>
+                <View style={styles.startReadingRow}>
+                  <Text style={styles.startReadingLabel}>Start Reading 2:</Text>
+                  <Text style={styles.startReadingValue}>{rowData?.start_reading2 || '-'}</Text>
+                </View>
+                <View style={styles.flowMeterRow}>
+                  <Icon name="speedometer-outline" size={18} color="#666" />
+                  <Text style={styles.flowMeterText}>
+                    Flow Meter: <Text style={styles.flowMeterName}>Flow Meter-2</Text>
+                  </Text>
+                </View>
+              </View>
+            )}
 
             <View style={styles.formGroup}>
               <Text style={styles.label}>Discharge Type <Text style={styles.star}>*</Text></Text>
@@ -449,6 +591,87 @@ const Activities = () => {
                 <Text style={styles.errorText}>{endFormik.errors.endFlowMeterImage}</Text>
               )}
             </View>
+
+            {/* Flow Meter 2 - Conditional Rendering for End Modal */}
+            {rowData?.has_second_flow_meter && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.flowMeterContainer}>
+                  <Icon name="speedometer-outline" size={20} color="#666" />
+                  <Text style={styles.flowMeterText}>
+                    Flow Meter: <Text style={styles.flowMeterName}>Flow Meter-2</Text>
+                  </Text>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>End Reading 2 <Text style={styles.star}>*</Text></Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      endFormik.errors.endReading2 &&
+                        endFormik.touched.endReading2 &&
+                        styles.inputError,
+                    ]}
+                    placeholder="Enter End Reading 2"
+                    keyboardType="numeric"
+                    value={endFormik.values.endReading2}
+                    onChangeText={endFormik.handleChange('endReading2')}
+                    onBlur={endFormik.handleBlur('endReading2')}
+                  />
+                  {endFormik.errors.endReading2 && endFormik.touched.endReading2 && (
+                    <Text style={styles.errorText}>{endFormik.errors.endReading2}</Text>
+                  )}
+                </View>
+
+                <View style={styles.formGroup}>
+                  <Text style={styles.label}>Flow Meter Image 2 <Text style={styles.star}>*</Text></Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.uploadButton,
+                      endFormik.errors.endFlowMeterImage2 &&
+                        endFormik.touched.endFlowMeterImage2 &&
+                        styles.inputError,
+                    ]}
+                    onPress={() => {
+                      const path = 'APEMCL/MARINE/';
+                      ImageBucketRN(
+                        endFormik,
+                        path,
+                        'endFlowMeterImage2',
+                        20971520,
+                        'camera',
+                        dispatch
+                      );
+                    }}
+                  >
+                    <Text style={styles.uploadButtonText}>Upload Flow Meter Image 2</Text>
+                  </TouchableOpacity>
+                  {endFormik.values.endFlowMeterImage2 && (
+                    <View style={styles.filePreview}>
+                      {endFormik.values.endFlowMeterImage2.match(/\.(jpg|jpeg|png)$/i) ? (
+                        <Image
+                          source={{ uri: endFormik.values.endFlowMeterImage2 }}
+                          style={styles.imagePreview}
+                        />
+                      ) : endFormik.values.endFlowMeterImage2.match(/\.pdf$/i) ? (
+                        <TouchableOpacity
+                          style={styles.pdfPreview}
+                          onPress={() => Linking.openURL(endFormik.values.endFlowMeterImage2)}
+                        >
+                          <Icon name="document-text-outline" size={24} color="red" />
+                          <Text style={styles.pdfText}>Download PDF</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <Text style={styles.fileNameText}>{endFormik.values.endFlowMeterImage2}</Text>
+                      )}
+                    </View>
+                  )}
+                  {endFormik.errors.endFlowMeterImage2 && endFormik.touched.endFlowMeterImage2 && (
+                    <Text style={styles.errorText}>{endFormik.errors.endFlowMeterImage2}</Text>
+                  )}
+                </View>
+              </>
+            )}
 
             <TouchableOpacity
               style={styles.submitButton}
