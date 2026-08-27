@@ -101,7 +101,7 @@ const Activities = () => {
       startReading: rowData?.start_reading || '',
       marineSealImage: null,
       startFlowMeterImage: null,
-      startReading2: rowData?.start_reading2 || '',
+      startReading2: rowData?.start_reading2 ?? 0,
       marineSealImage2: null,
       startFlowMeterImage2: null,
     },
@@ -413,9 +413,10 @@ const Activities = () => {
                       ]}
                       placeholder="Enter Start Reading 2"
                       keyboardType="numeric"
-                      value={String(startFormik.values.startReading2 || '')}
+                      value={String(startFormik.values.startReading2 ?? '')}
                       onChangeText={startFormik.handleChange('startReading2')}
                       onBlur={startFormik.handleBlur('startReading2')}
+                      editable={rowData?.start_reading2 === null || rowData?.start_reading2 === "" || rowData?.start_reading_edit_request_flag === 2}
                     />
                     {startFormik.errors.startReading2 && startFormik.touched.startReading2 && (
                       <Text style={styles.errorText}>{startFormik.errors.startReading2}</Text>
