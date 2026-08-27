@@ -37,87 +37,86 @@ const Activities = () => {
   const [loading, setLoading] = useState(false);
 
   // ================= START VALIDATION =================
-  // ================= START VALIDATION =================
-const startValidationSchema = Yup.object().shape({
-  startReading: Yup.string().required('Start Reading is required'),
-  marineSealImage: Yup.string().required('Marine Seal Image is required'),
-  startFlowMeterImage: Yup.string().required('Flow Meter Image is required'),
-  // Flow Meter 2 fields - conditional validation using test
-  startReading2: Yup.string().test(
-    'startReading2-required',
-    'Start Reading 2 is required',
-    function(value) {
-      const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-      if (hasSecondFlowMeter) {
-        return value && value.trim().length > 0;
+  const startValidationSchema = Yup.object().shape({
+    startReading: Yup.string().required('Start Reading is required'),
+    marineSealImage: Yup.string().required('Marine Seal Image is required'),
+    startFlowMeterImage: Yup.string().required('Flow Meter Image is required'),
+    // Flow Meter 2 fields - conditional validation
+    startReading2: Yup.string().test(
+      'startReading2-required',
+      'Start Reading 2 is required',
+      function(value) {
+        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        if (hasSecondFlowMeter) {
+          return value && value.trim().length > 0;
+        }
+        return true;
       }
-      return true;
-    }
-  ),
-  marineSealImage2: Yup.string().test(
-    'marineSealImage2-required',
-    'Marine Seal Image 2 is required',
-    function(value) {
-      const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-      if (hasSecondFlowMeter) {
-        return value && value.trim().length > 0;
+    ),
+    marineSealImage2: Yup.string().test(
+      'marineSealImage2-required',
+      'Marine Seal Image 2 is required',
+      function(value) {
+        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        if (hasSecondFlowMeter) {
+          return value && value.trim().length > 0;
+        }
+        return true;
       }
-      return true;
-    }
-  ),
-  startFlowMeterImage2: Yup.string().test(
-    'startFlowMeterImage2-required',
-    'Flow Meter Image 2 is required',
-    function(value) {
-      const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-      if (hasSecondFlowMeter) {
-        return value && value.trim().length > 0;
+    ),
+    startFlowMeterImage2: Yup.string().test(
+      'startFlowMeterImage2-required',
+      'Flow Meter Image 2 is required',
+      function(value) {
+        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        if (hasSecondFlowMeter) {
+          return value && value.trim().length > 0;
+        }
+        return true;
       }
-      return true;
-    }
-  ),
-});
+    ),
+  });
 
-// ================= END VALIDATION =================
-const endValidationSchema = Yup.object().shape({
-  dischargeAction: Yup.string().required('Discharge Type is required'),
-  endReading: Yup.string().required('End Reading is required'),
-  endFlowMeterImage: Yup.string().required('Flow Meter Image is required'),
-  // Flow Meter 2 fields - conditional validation using test
-  dischargeAction2: Yup.string().test(
-    'dischargeAction2-required',
-    'Discharge Type 2 is required',
-    function(value) {
-      const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-      if (hasSecondFlowMeter) {
-        return value && value.trim().length > 0;
+  // ================= END VALIDATION =================
+  const endValidationSchema = Yup.object().shape({
+    dischargeAction: Yup.string().required('Discharge Type 1 is required'),
+    endReading: Yup.string().required('End Reading 1 is required'),
+    endFlowMeterImage: Yup.string().required('Flow Meter Image 1 is required'),
+    // Flow Meter 2 fields - conditional validation
+    dischargeAction2: Yup.string().test(
+      'dischargeAction2-required',
+      'Discharge Type 2 is required',
+      function(value) {
+        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        if (hasSecondFlowMeter) {
+          return value && value.trim().length > 0;
+        }
+        return true;
       }
-      return true;
-    }
-  ),
-  endReading2: Yup.string().test(
-    'endReading2-required',
-    'End Reading 2 is required',
-    function(value) {
-      const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-      if (hasSecondFlowMeter) {
-        return value && value.trim().length > 0;
+    ),
+    endReading2: Yup.string().test(
+      'endReading2-required',
+      'End Reading 2 is required',
+      function(value) {
+        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        if (hasSecondFlowMeter) {
+          return value && value.trim().length > 0;
+        }
+        return true;
       }
-      return true;
-    }
-  ),
-  endFlowMeterImage2: Yup.string().test(
-    'endFlowMeterImage2-required',
-    'Flow Meter Image 2 is required',
-    function(value) {
-      const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
-      if (hasSecondFlowMeter) {
-        return value && value.trim().length > 0;
+    ),
+    endFlowMeterImage2: Yup.string().test(
+      'endFlowMeterImage2-required',
+      'Flow Meter Image 2 is required',
+      function(value) {
+        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        if (hasSecondFlowMeter) {
+          return value && value.trim().length > 0;
+        }
+        return true;
       }
-      return true;
-    }
-  ),
-});
+    ),
+  });
 
   // ================= START FORMIK =================
   const startFormik = useFormik({
@@ -625,7 +624,7 @@ const endValidationSchema = Yup.object().shape({
               </View>
               <View style={styles.sectionContent}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>End Reading <Text style={styles.star}>*</Text></Text>
+                  <Text style={styles.label}>End Reading 1 <Text style={styles.star}>*</Text></Text>
                   <TextInput
                     style={[
                       styles.input,
@@ -645,7 +644,7 @@ const endValidationSchema = Yup.object().shape({
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Flow Meter Image <Text style={styles.star}>*</Text></Text>
+                  <Text style={styles.label}>Flow Meter Image 1 <Text style={styles.star}>*</Text></Text>
                   <TouchableOpacity
                     style={[
                       styles.uploadButton,
@@ -816,23 +815,12 @@ const endValidationSchema = Yup.object().shape({
   const renderCard = ({ item, index }) => {
     const hasStartReading = item?.start_reading !== null && item?.start_reading !== undefined;
     const hasEndReading = item?.end_reading !== null && item?.end_reading !== undefined;
-    const hasMarineSealImage = item?.marine_seal_image !== null && item?.marine_seal_image !== undefined;
     const isCompleted = hasStartReading && hasEndReading;
     const isStarted = hasStartReading && !hasEndReading;
 
     const totalDischarged = hasStartReading && hasEndReading
       ? (Number(item.end_reading || 0) - Number(item.start_reading || 0)).toFixed(2)
       : '-';
-
-    const getGuardPondName = (id) => {
-      const pondMap = {
-        '1': 'Guard Pond-1',
-        '2': 'Guard Pond-2',
-        '3': 'Guard Pond-3',
-        '4': 'Guard Pond-4',
-      };
-      return pondMap[id] || pondMap[String(id)] || '-';
-    };
 
     const getStatusText = () => {
       if (isCompleted) return 'Completed';
