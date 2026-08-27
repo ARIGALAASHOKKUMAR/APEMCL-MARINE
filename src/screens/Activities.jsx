@@ -91,7 +91,7 @@ const Activities = () => {
       : Yup.string(),
     endFlowMeterImage2: rowData?.has_second_flow_meter
       ? Yup.string().required('Flow Meter Image 2 is required')
-      : Yup.string().nullable(),
+      : Yup.string(),
   });
 
   // ================= START FORMIK =================
