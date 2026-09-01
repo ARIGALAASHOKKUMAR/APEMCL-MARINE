@@ -5,16 +5,20 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
-  Image,
   StyleSheet,
   Alert,
   Linking,
   Modal,
   ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { 
   commonAPICall, 
   CONTEXT_HEADING, 
@@ -24,7 +28,8 @@ import {
 } from '../utils/utils';
 import { showModal } from '../actions';
 import { TermsAndConditions, wasteTypes } from '../utils/CommonFunctions';
-// import StepperProgress from './services/Test';
+
+const { width, height } = Dimensions.get('window');
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const VEHICLE_FEE = 500;
@@ -34,7 +39,6 @@ const TDS_RATE = 0.02;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Returns waste-type service charge (a), distance charge (b), margin (c), and per-ton subtotal. */
 const calcWasteCharges = (data) => {
   const wasteLabel = wasteTypes
     .find((i) => String(i.value) === String(data?.receiverWasteTypeId))
@@ -62,7 +66,6 @@ const calcWasteCharges = (data) => {
   return { a, b, c, subTotalPerTon: a + b + c };
 };
 
-/** Applies GST on a net amount and returns a full tax breakdown. */
 const applyGst = (netAmount, data) => {
   if (data?.isSez) {
     return {
@@ -86,13 +89,12 @@ const applyGst = (netAmount, data) => {
 
 // ─── Shared UI sub-components ────────────────────────────────────────────────
 
-/** Payment gateway radio selector (Razorpay / BillDesk). */
 const GatewaySelector = ({ paymentMode, onChange }) => (
   <View style={styles.gatewayContainer}>
     {[
-      { value: "RAZORPAY", label: "Razorpay" },
-      { value: "BILLDESK", label: "BillDesk" },
-    ].map(({ value, label }) => (
+      { value: "RAZORPAY", label: "Razorpay", icon: "payment" },
+      { value: "BILLDESK", label: "BillDesk", icon: "credit-card" },
+    ].map(({ value, label, icon }) => (
       <TouchableOpacity
         key={value}
         style={[
@@ -100,17 +102,21 @@ const GatewaySelector = ({ paymentMode, onChange }) => (
           paymentMode === value && styles.gatewayOptionSelected,
         ]}
         onPress={() => onChange(value)}
+        activeOpacity={0.7}
       >
         <View style={styles.radioCircle}>
           {paymentMode === value && <View style={styles.radioSelected} />}
         </View>
-        <Text style={styles.gatewayLabel}>{label}</Text>
+        <Icon name={icon} size={18} color={paymentMode === value ? '#2e7d32' : '#666'} />
+        <Text style={[
+          styles.gatewayLabel,
+          paymentMode === value && styles.gatewayLabelSelected,
+        ]}>{label}</Text>
       </TouchableOpacity>
     ))}
   </View>
 );
 
-/** Shared GST summary rows appended to any payment table. */
 const GstRows = ({
   subtotal,
   tdsAmount,
@@ -121,73 +127,87 @@ const GstRows = ({
   applyTds,
   onTdsChange,
 }) => (
-  <View>
-    <View style={styles.row}>
-      <View style={styles.tdsContainer}>
-        <TouchableOpacity 
-          style={styles.checkboxContainer} 
-          onPress={() => onTdsChange(!applyTds)}
-        >
-          <View style={[styles.checkbox, applyTds && styles.checkboxChecked]} />
-          <Text style={styles.tdsText}>TDS Deduction {(TDS_RATE * 100)}%</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={[styles.rowValue, styles.textAlignRight]}>
+  <View style={styles.gstContainer}>
+    <View style={styles.gstRow}>
+      <TouchableOpacity 
+        style={styles.tdsCheckboxContainer} 
+        onPress={() => onTdsChange(!applyTds)}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.checkbox, applyTds && styles.checkboxChecked]}>
+          {applyTds && <Icon name="check" size={14} color="#fff" />}
+        </View>
+        <Text style={styles.tdsText}>TDS Deduction {(TDS_RATE * 100)}%</Text>
+      </TouchableOpacity>
+      <Text style={[styles.gstValue, styles.textAlignRight]}>
         {applyTds ? tdsAmount.toFixed(2) : "0.00"}
       </Text>
     </View>
     
-    <View style={styles.row}>
-      <View style={styles.tdsContainer}>
-        <Text style={styles.rowLabel}>
-          Net Amount {applyTds && <Text style={styles.tdsNote}>(After TDS Deduction)</Text>}
-        </Text>
-      </View>
-      <Text style={[styles.rowValue, styles.textAlignRight]}>
+    <View style={styles.gstRow}>
+      <Text style={styles.gstLabel}>
+        Net Amount {applyTds && <Text style={styles.tdsNote}>(After TDS)</Text>}
+      </Text>
+      <Text style={[styles.gstValue, styles.textAlignRight]}>
         {applyTds ? (netAmount - tdsAmount).toFixed(2) : netAmount.toFixed(2)}
       </Text>
     </View>
     
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>SGST (9%)</Text>
-      <Text style={[styles.rowValue, styles.textAlignRight]}>{sgst.toFixed(2)}</Text>
+    <View style={styles.gstRow}>
+      <Text style={styles.gstLabel}>SGST (9%)</Text>
+      <Text style={[styles.gstValue, styles.textAlignRight]}>{sgst.toFixed(2)}</Text>
     </View>
     
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>CGST (9%)</Text>
-      <Text style={[styles.rowValue, styles.textAlignRight]}>{cgst.toFixed(2)}</Text>
+    <View style={styles.gstRow}>
+      <Text style={styles.gstLabel}>CGST (9%)</Text>
+      <Text style={[styles.gstValue, styles.textAlignRight]}>{cgst.toFixed(2)}</Text>
     </View>
     
-    <View style={[styles.row, styles.totalRow]}>
-      <Text style={styles.totalLabel}>TOTAL AMOUNT</Text>
-      <Text style={[styles.totalValue, styles.textAlignRight]}>
+    <View style={[styles.gstRow, styles.totalGstRow]}>
+      <Text style={styles.totalGstLabel}>TOTAL AMOUNT</Text>
+      <Text style={[styles.totalGstValue, styles.textAlignRight]}>
         {applyTds ? (netAmount - tdsAmount + sgst + cgst).toFixed(2) : totalWithGst.toFixed(2)}
       </Text>
     </View>
   </View>
 );
 
-/** Shared service-charge legend used in manifest / recyclable / effluent panels. */
 const ServiceChargeRef = ({ a, b, c, kms, label = "Service Charge Reference" }) => (
   <View style={styles.serviceRefContainer}>
     <Text style={styles.serviceRefTitle}>{label}</Text>
-    <Text style={styles.serviceRefText}>(A) Service Charges : ₹{typeof a === 'number' ? a.toFixed(2) : a}</Text>
-    <Text style={styles.serviceRefText}>
-      (B) Waste Monitoring & Vehicle Tracking Charges
-      {kms ? ` ${kms} KM` : ""} : ₹{typeof b === 'number' ? b.toFixed(2) : b}
-    </Text>
-    <Text style={styles.serviceRefText}>
-      (C) 5% Margin on (A + B) : ₹{typeof c === "number" ? c.toFixed(2) : c}
-    </Text>
+    <View style={styles.serviceRefItem}>
+      <Text style={styles.serviceRefLabel}>(A)</Text>
+      <Text style={styles.serviceRefText}>Service Charges : ₹{typeof a === 'number' ? a.toFixed(2) : a}</Text>
+    </View>
+    <View style={styles.serviceRefItem}>
+      <Text style={styles.serviceRefLabel}>(B)</Text>
+      <Text style={styles.serviceRefText}>
+        Waste Monitoring & Vehicle Tracking{kms ? ` ${kms} KM` : ""} : ₹{typeof b === 'number' ? b.toFixed(2) : b}
+      </Text>
+    </View>
+    <View style={styles.serviceRefItem}>
+      <Text style={styles.serviceRefLabel}>(C)</Text>
+      <Text style={styles.serviceRefText}>
+        5% Margin on (A + B) : ₹{typeof c === "number" ? c.toFixed(2) : c}
+      </Text>
+    </View>
   </View>
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
+function RegistrationPayment({ type: propType }) {
   const navigation = useNavigation();
   const route = useRoute();
-  const data = route?.params?.data;
+  
+  const routeData = route?.params?.data;
+  const routeVehicleList = route?.params?.vehicleList || [];
+  const routeType = route?.params?.type || propType || "MANIFEST_PAYMENT";
+  
+  const data = routeData;
+  const vehicleList = routeVehicleList;
+  const type = routeType;
+  
   const { officerName, mobile, userId } = useSelector((s) => s.LoginReducer);
   const dispatch = useDispatch();
   const [transporterModuleReferenceId, setTransporterModuleReferenceId] = useState("");
@@ -221,7 +241,6 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
 
   let description = descriptions[type] || "Payment";
 
-  // ── Parsed waste details ──
   let parsedwasteDetails = [];
   try {
     parsedwasteDetails = data?.waste_details
@@ -231,7 +250,6 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     parsedwasteDetails = [];
   }
 
-  // ── Subtotal calculation ──
   let subtotal = 0;
   let wasteDetails = null;
 
@@ -248,7 +266,6 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     subtotal = TRANSPORTER_REGISTRATION_FEE;
   }
 
-  // ── Effluent helpers ──
   const effluentQuantity = Number(data?.total_volume || 0);
   const effluentBaseRate = 15;
   const effluentCessRate = 0.75;
@@ -257,7 +274,6 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
   const effluentGstResult = applyGst(effluentSubtotal);
   const effluentTotalWithGst = effluentGstResult.totalAmount;
   const effluentTdsAmount = applyTds ? effluentSubtotal * TDS_RATE : 0;
-  const effluentTotalAfterTds = effluentTotalWithGst - effluentTdsAmount;
 
   const marineQuantity = Number(data?.totaldischargevolume || 0);
   const marineBaseRate = 10;
@@ -266,80 +282,62 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
   const marineGstResult = applyGst(marineSubtotal);
   const marineTotalWithGst = marineGstResult.totalAmount;
   const marineTdsAmount = applyTds ? marineSubtotal * TDS_RATE : 0;
-  const marineTotalAfterTds = marineTotalWithGst - marineTdsAmount;
 
-  // ── Effects ──
   useEffect(() => {
     if (type === "RECYCLABLE_PAYMENT" || type === "MANIFEST_PAYMENT") {
-      commonAPICall(RECYCLABLEVEHICLID, {}, "get").then((res) => {
+      commonAPICall(RECYCLABLEVEHICLID, {}, "get", dispatch).then((res) => {
         if (res.status === 200)
           setVehicle(res?.data?.Transport_Vehicle_Selection_Details || []);
       });
     }
-  }, [type]);
+  }, [type, dispatch]);
 
-  // ── Build items array per payment type ──
   const buildItems = (payType) => {
     if (payType === "TRANSPORT_REGISTRATION") {
-      return [
-        {
-          moduleReferenceId: transporterModuleReferenceId,
-          itemName: "Transport Registration Fee",
-          quantity: 1,
-          unit: "NOS",
-          serviceCharge: 1000.0,
-          monitoringCharge: 0.0,
-          marginCharge: 0.0,
-          itemTotal: 1180.0,
-        },
-      ];
+      return [{
+        moduleReferenceId: transporterModuleReferenceId,
+        itemName: "Transport Registration Fee",
+        quantity: 1,
+        unit: "NOS",
+        serviceCharge: 1000.0,
+        monitoringCharge: 0.0,
+        marginCharge: 0.0,
+        itemTotal: 1180.0,
+      }];
     }
     if (payType === "EFFLUENT_PIPELINE_PAYMENT") {
-      return [
-        {
-          itemName: data?.effluent_type,
-          transactionId: "",
-          quantity: data?.disposal_quantity,
-          unit: "KL",
-          serviceCharge: effluentBaseRate,
-          monitoringCharge: 0,
-          marginCharge: effluentCessRate,
-          subTotalPerKL: effluentTotalRate,
-          itemTotal: effluentSubtotal,
-          moduleReferenceId: data?.effluent_disposal_item_id,
-        },
-      ];
+      return [{
+        itemName: data?.effluent_type,
+        transactionId: "",
+        quantity: data?.disposal_quantity,
+        unit: "KL",
+        serviceCharge: effluentBaseRate,
+        monitoringCharge: 0,
+        marginCharge: effluentCessRate,
+        subTotalPerKL: effluentTotalRate,
+        itemTotal: effluentSubtotal,
+        moduleReferenceId: data?.effluent_disposal_item_id,
+      }];
     }
     if (payType === "MARINE_DISCHARGE") {
-      return [
-        {
-          itemName: "Marine Discharge",
-          transactionId: "",
-          quantity: data?.totaldischargevolume,
-          unit: "KL",
-          serviceCharge: marineBaseRate,
-          monitoringCharge: 0,
-          marginCharge: effluentCessRate,
-          subTotalPerKL: marineTotalRate,
-          itemTotal: marineSubtotal,
-          moduleReferenceId: data?.postingid,
-        },
-      ];
+      return [{
+        itemName: "Marine Discharge",
+        transactionId: "",
+        quantity: data?.totaldischargevolume,
+        unit: "KL",
+        serviceCharge: marineBaseRate,
+        monitoringCharge: 0,
+        marginCharge: effluentCessRate,
+        subTotalPerKL: marineTotalRate,
+        itemTotal: marineSubtotal,
+        moduleReferenceId: data?.postingid,
+      }];
     }
-
     if (payType === "MANIFEST_GENERATION" || payType === "MANIFEST_PAYMENT") {
-      const { a, b, c, subTotalPerTon } =
-        wasteDetails || calcWasteCharges(data);
+      const { a, b, c, subTotalPerTon } = wasteDetails || calcWasteCharges(data);
       return data?.wastes?.map((ww) => ({
-        itemName: `${data.wasteTypeName} - ${
-          wasteTypes
-            .find((i) => String(i.value) === String(ww.wasteTypeId))
-            ?.label?.split("-")[1]
-            ?.trim() || ""
-        }`,
-        transactionId:
-          ww?.generatorApprovalTransactionNumber ||
-          ww?.generator_approval_transaction_number,
+        itemName: `${data.wasteTypeName} - ${wasteTypes.find((i) => String(i.value) === String(ww.wasteTypeId))?.label?.split("-")[1]?.trim() || ""}`,
+        transactionId: ww?.generatorApprovalTransactionNumber || ww?.generator_approval_transaction_number,
         quantity: ww.disposalQuantity,
         unit: ww.unitId === 1 ? "KL" : "Tonnes",
         serviceCharge: a,
@@ -360,53 +358,31 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
         moduleReferenceId: vehicleList[0]?.vehicleid,
       }));
     }
-
     if (payType === "RECYCLABLE_PAYMENT") {
       const { b, c, subTotalPerTon } = wasteDetails || calcWasteCharges(data);
-      return [
-        {
-          itemName: data.waste_type_name,
-          transactionId: data?.wastes[0]?.generator_approval_transaction_number,
-          quantity: data?.wastes[0]?.disposal_quantity,
-          unit: data?.unitId === 1 ? "KL" : "Tonnes",
-          serviceCharge: 5,
-          monitoringCharge: b,
-          marginCharge: c,
-          subTotalPerKL: subTotalPerTon,
-          itemTotal: (
-            (5 + b + c) *
-            data?.wastes[0]?.disposal_quantity
-          )?.toFixed(2),
-          moduleReferenceId:
-            data?.transportVehicleSelectionId ||
-            data?.transportvehicleselectionid,
-        },
-      ];
+      return [{
+        itemName: data.waste_type_name,
+        transactionId: data?.wastes[0]?.generator_approval_transaction_number,
+        quantity: data?.wastes[0]?.disposal_quantity,
+        unit: data?.unitId === 1 ? "KL" : "Tonnes",
+        serviceCharge: 5,
+        monitoringCharge: b,
+        marginCharge: c,
+        subTotalPerKL: subTotalPerTon,
+        itemTotal: ((5 + b + c) * data?.wastes[0]?.disposal_quantity)?.toFixed(2),
+        moduleReferenceId: data?.transportVehicleSelectionId || data?.transportvehicleselectionid,
+      }];
     }
     if (payType === "OTHER_STATE_INDUSTRY_MAPPING") {
-      return [
-        {
-          moduleReferenceId: data?.detail_id || data?.detail_id,
-        },
-      ];
+      return [{ moduleReferenceId: data?.detail_id || data?.detail_id }];
     }
     return [];
   };
 
-  // ── Fly ash amounts ──
   const getFlyAshAmounts = () => {
     const list = vehicleList || [];
-
-    const totalQuantity = list.reduce(
-      (sum, item) => sum + Number(item?.quantity || 0),
-      0,
-    );
-
-    const flyAshSubtotal = list.reduce(
-      (sum, item) => sum + Number(item?.amount || 0),
-      0,
-    );
-
+    const totalQuantity = list.reduce((sum, item) => sum + Number(item?.quantity || 0), 0);
+    const flyAshSubtotal = list.reduce((sum, item) => sum + Number(item?.amount || 0), 0);
     const gstResult = applyGst(flyAshSubtotal);
     const flyAshTotalWithGst = gstResult.totalAmount;
     const flyAshTdsAmount = applyTds ? flyAshSubtotal * TDS_RATE : 0;
@@ -423,17 +399,9 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     };
   };
 
-  // ── Build base payload ──
   const buildPayload = (payType, gateway, payLater) => {
     const isFlyAsh = payType === "FLY_ASH_DISPOSAL_PAYMENT";
-    const {
-      flyAshSubtotal,
-      flyAshSgst,
-      flyAshCgst,
-      flyAshTotalWithGst,
-      flyAshTdsAmount,
-      flyAshTotalAfterTds,
-    } = isFlyAsh ? getFlyAshAmounts() : {};
+    const { flyAshSubtotal, flyAshSgst, flyAshCgst, flyAshTotalWithGst, flyAshTdsAmount, flyAshTotalAfterTds } = isFlyAsh ? getFlyAshAmounts() : {};
 
     let baseSubtotal, baseSgst, baseCgst, baseTotalWithGst, baseTdsAmount, baseTotalAfterTds;
 
@@ -494,13 +462,11 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     };
   };
 
-  // ── Razorpay form submit ──
   const submitRazorpayForm = (orderData, payload) => {
     if (!orderData?.orderId) {
       Alert.alert("Error", "Order not created yet");
       return;
     }
-    // For React Native, we need to use Linking or WebView
     const razorpayUrl = `https://api.razorpay.com/v1/checkout/embedded?key_id=${orderData.gatewayKey}&amount=${payload.netPayableAmount * 100}&currency=${orderData.currency || "INR"}&order_id=${orderData.orderId}&name=AP ENVIRONMENT MANAGEMENT&description=${payload.description}&prefill[name]=${payload.customerName}&prefill[contact]=${payload.mobileNumber}&prefill[email]=${payload.email}&notes[paymentFor]=${payload.paymentFor}&notes[referenceId]=${payload.referenceId}&notes[userId]=${payload.userId}&callback_url=https://swapi.dev.nidhi.apcfss.in/apemcl/api/open/payment-callback`;
     
     Linking.openURL(razorpayUrl).catch(err => {
@@ -508,12 +474,11 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     });
   };
 
-  // ── BillDesk: create order & collect redirect data ──
   const initBillDesk = async (payType) => {
     setLoading(true);
     const payload = buildPayload(payType, "BILLDESK", false);
     try {
-      const res = await commonAPICall(PAYMENTAPEMCL, payload, "post");
+      const res = await commonAPICall(PAYMENTAPEMCL, payload, "post", dispatch);
       if (res.status === 200) {
         const d = res.data.data;
         const redirect = d.links.find((l) => l.rel === "redirect");
@@ -532,13 +497,12 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     }
   };
 
-  // ── Unified Pay Now ──
   const handlePayNow = async (payType) => {
     try {
       setLoading(true);
       if (paymentMode === "RAZORPAY") {
         const payload = buildPayload(payType, "RAZORPAY", false);
-        const res = await commonAPICall(PAYMENTAPEMCL, payload, "post");
+        const res = await commonAPICall(PAYMENTAPEMCL, payload, "post", dispatch);
         if (res?.status === 200 || res?.status === 201)
           submitRazorpayForm(res.data, payload);
       } else {
@@ -552,13 +516,12 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     }
   };
 
-  // ── Unified Pay Later ──
   const handlePayLater = async (payType) => {
     try {
       setLoading(true);
       if (paymentMode === "RAZORPAY") {
         const payload = buildPayload(payType, "RAZORPAY", true);
-        const res = await commonAPICall(PAYMENTAPEMCL, payload, "post");
+        const res = await commonAPICall(PAYMENTAPEMCL, payload, "post", dispatch);
         if (res?.status === 200) {
           if (payType === "RECYCLABLE_PAYMENT") {
             navigation.navigate("ConfirmationRequired");
@@ -581,7 +544,6 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     }
   };
 
-  // ── Recyclable accept / reject ──
   const handleRecyclableAction = async (transportvehicleselectionid, action) => {
     Alert.alert(
       "Are you sure?",
@@ -598,6 +560,7 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
                 recyclableReceiverPaymentAction: action,
               },
               "post",
+              dispatch
             );
             if (res.status === 200) {
               action === "ACCEPTED" ? setRecyclable(true) : navigation.goBack();
@@ -616,32 +579,29 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
         recyclablePaymentConfirmation: true,
       },
       "post",
+      dispatch
     );
     if (res.status === 200) navigation.navigate("ManifestList");
   };
 
-  // ── Terms & Conditions modal ──
   const ShowTerms = () => {
     dispatch(showModal(<TermsAndConditions />));
   };
 
-  // ── Pay Buttons component ──
   const PayButtons = ({ onPayLater, onPayNow, showPayLater = true }) => (
     <View style={styles.payButtonsContainer}>
       {showPayLater && (
-        <TouchableOpacity style={[styles.button, styles.payLaterButton]} onPress={onPayLater}>
+        <TouchableOpacity style={[styles.button, styles.payLaterButton]} onPress={onPayLater} activeOpacity={0.8}>
           <Text style={styles.buttonText}>PAY LATER</Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity style={[styles.button, styles.payNowButton]} onPress={onPayNow}>
+      <TouchableOpacity style={[styles.button, styles.payNowButton]} onPress={onPayNow} activeOpacity={0.8}>
         <Text style={styles.buttonText}>PAY NOW</Text>
       </TouchableOpacity>
     </View>
   );
 
-  // ── BillDesk redirect ──
   if (paymentData) {
-    // Open BillDesk URL in browser or WebView
     Linking.openURL(paymentData.href).catch(err => {
       Alert.alert("Error", "Failed to open payment gateway");
     });
@@ -656,7 +616,6 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     const gstResult = applyGst(subtotal);
     const totalWithGst = gstResult.totalAmount;
     const tdsAmount = applyTds ? subtotal * TDS_RATE : 0;
-    const totalAfterTds = totalWithGst - tdsAmount;
     
     return (
       <View style={styles.cardBody}>
@@ -665,57 +624,36 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
             <Text style={styles.panelHeadingText}>{CONTEXT_HEADING}</Text>
           </View>
           <View style={styles.panelBody}>
-            <ScrollView horizontal>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.tableContainer}>
                 <View style={styles.tableHeader}>
                   <Text style={[styles.tableCell, styles.headerCell, { width: 30 }]}>#</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Waste Details</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Quantity</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Unit</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(A)</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(B)</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(C)</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Sub Total</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 140 }]}>Waste Details</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Qty</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Unit</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(A)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(B)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(C)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Sub Total</Text>
                   <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Total</Text>
                 </View>
                 {wastes.map((waste, i) => {
-                  const quantity = Number(
-                    waste?.disposal_quantity || waste?.disposalQuantity || 0,
-                  );
-                  const wasteType = wasteTypes
-                    .find(
-                      (item) =>
-                        String(item.value) ===
-                        String(data?.receiverWasteTypeId),
-                    )
-                    ?.label?.split("-")[1];
+                  const quantity = Number(waste?.disposal_quantity || waste?.disposalQuantity || 0);
+                  const wasteType = wasteTypes.find((item) => String(item.value) === String(data?.receiverWasteTypeId))?.label?.split("-")[1];
                   return (
                     <View key={i} style={styles.tableRow}>
                       <Text style={[styles.tableCell, { width: 30 }]}>{i + 1}</Text>
-                      <View style={[styles.tableCell, { width: 150 }]}>
-                        <Text>{data?.waste_type_name ||
-                          `${waste?.wasteType?.split("-")[0]} - ${wasteType || ""}`}</Text>
-                        <Text style={styles.transactionId}>
-                          Transaction Id:{" "}
-                          {waste?.generatorApprovalTransactionNumber ||
-                            waste?.wasteType?.split("-")[2] ||
-                            data?.generator_approval_transaction_number ||
-                            "-"}
-                        </Text>
+                      <View style={[styles.tableCell, { width: 140 }]}>
+                        <Text style={styles.wasteNameText}>{data?.waste_type_name || `${waste?.wasteType?.split("-")[0]} - ${wasteType || ""}`}</Text>
+                        <Text style={styles.transactionId}>Txn: {waste?.generatorApprovalTransactionNumber || waste?.wasteType?.split("-")[2] || data?.generator_approval_transaction_number || "-"}</Text>
                       </View>
                       <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{quantity}</Text>
-                      <Text style={[styles.tableCell, { width: 70 }]}>
-                        {waste?.unit || (waste?.unitId === 1 ? "KL" : "Tonnes")}
-                      </Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{a?.toFixed(2)}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{b?.toFixed(2)}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{c?.toFixed(2)}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
-                        {subTotalPerTon?.toFixed(2)}
-                      </Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>
-                        {(quantity * subTotalPerTon)?.toFixed(2)}
-                      </Text>
+                      <Text style={[styles.tableCell, { width: 60 }]}>{waste?.unit || (waste?.unitId === 1 ? "KL" : "Tonnes")}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{a?.toFixed(2)}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{b?.toFixed(2)}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{c?.toFixed(2)}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{subTotalPerTon?.toFixed(2)}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{(quantity * subTotalPerTon)?.toFixed(2)}</Text>
                     </View>
                   );
                 })}
@@ -732,33 +670,31 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
               </View>
             </ScrollView>
 
-            <View style={styles.flexRow}>
-              {a === 5 ? (
-                <>
-                  <View style={styles.noteContainer}>
-                    <Text style={styles.noteText}>Note: Shall be Paid by Receiver</Text>
-                    <Text style={styles.noteTitle}>Proceed for Receiver Payment Confirmation</Text>
-                  </View>
-                  <TouchableOpacity style={styles.submitButton} onPress={() => submitRecyclableDetails(vehicle)}>
-                    <Text style={styles.buttonText}>SUBMIT</Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <View style={styles.paymentActionsContainer}>
-                  <ServiceChargeRef a={a} b={b} c={c} kms={data?.totalKms} />
-                  <View style={styles.paymentActions}>
-                    <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
-                    <PayButtons
-                      onPayLater={() => handlePayLater("MANIFEST_PAYMENT")}
-                      onPayNow={() => handlePayNow("MANIFEST_PAYMENT")}
-                    />
-                  </View>
+            {a === 5 ? (
+              <View style={styles.submitContainer}>
+                <View style={styles.noteContainer}>
+                  <Text style={styles.noteText}>Note: Shall be Paid by Receiver</Text>
+                  <Text style={styles.noteTitle}>Proceed for Receiver Payment Confirmation</Text>
                 </View>
-              )}
-            </View>
+                <TouchableOpacity style={styles.submitButtonRight} onPress={() => submitRecyclableDetails(vehicle)} activeOpacity={0.8}>
+                  <Text style={styles.submitButtonText}>SUBMIT</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.paymentActionsContainer}>
+                <ServiceChargeRef a={a} b={b} c={c} kms={data?.totalKms} />
+                <View style={styles.paymentActions}>
+                  <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
+                  <PayButtons
+                    onPayLater={() => handlePayLater("MANIFEST_PAYMENT")}
+                    onPayNow={() => handlePayNow("MANIFEST_PAYMENT")}
+                  />
+                </View>
+              </View>
+            )}
           </View>
         </View>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
       </View>
     );
   };
@@ -770,134 +706,130 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     const gstResult = applyGst(effluentSubtotal);
     
     return (
-      <>
-        <ScrollView horizontal>
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 30 }]}>#</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Waste Details</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Quantity</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Unit</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(A)</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(B)</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(C)</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Sub Total</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Total</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, styles.textCenter, { width: 30 }]}>1</Text>
-              <Text style={[styles.tableCell, { width: 150 }]}>{data?.effluent_type}</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{effluentQuantity.toFixed(2)}</Text>
-              <Text style={[styles.tableCell, { width: 70 }]}>KL</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{effluentBaseRate.toFixed(2)}</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>0.00</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{effluentCessRate.toFixed(2)}</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{effluentTotalRate.toFixed(2)}</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{effluentSubtotal.toFixed(2)}</Text>
-            </View>
-            <GstRows
-              subtotal={effluentSubtotal}
-              tdsAmount={tdsAmount}
-              netAmount={gstResult.netAmount}
-              sgst={gstResult.sgst}
-              cgst={gstResult.cgst}
-              totalWithGst={totalWithGst}
-              applyTds={applyTds}
-              onTdsChange={setApplyTds}
-            />
+      <View style={styles.cardBody}>
+        <View style={styles.panel}>
+          <View style={styles.panelHeading}>
+            <Text style={styles.panelHeadingText}>{CONTEXT_HEADING}</Text>
           </View>
-        </ScrollView>
+          <View style={styles.panelBody}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 30 }]}>#</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 140 }]}>Waste Details</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Qty</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Unit</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(A)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(B)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(C)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Sub Total</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Total</Text>
+                </View>
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.textCenter, { width: 30 }]}>1</Text>
+                  <Text style={[styles.tableCell, { width: 140 }]}>{data?.effluent_type}</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{effluentQuantity.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, { width: 60 }]}>KL</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{effluentBaseRate.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>0.00</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{effluentCessRate.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{effluentTotalRate.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{effluentSubtotal.toFixed(2)}</Text>
+                </View>
+                <GstRows
+                  subtotal={effluentSubtotal}
+                  tdsAmount={tdsAmount}
+                  netAmount={gstResult.netAmount}
+                  sgst={gstResult.sgst}
+                  cgst={gstResult.cgst}
+                  totalWithGst={totalWithGst}
+                  applyTds={applyTds}
+                  onTdsChange={setApplyTds}
+                />
+              </View>
+            </ScrollView>
 
-        <View style={styles.paymentActionsContainer}>
-          <ServiceChargeRef
-            a="15.00"
-            b="0.00"
-            c="0.75"
-            label="Service Charge Reference"
-          />
-          <View style={styles.paymentActions}>
-            <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
-            <PayButtons
-              onPayLater={() => handlePayLater("EFFLUENT_PIPELINE_PAYMENT")}
-              onPayNow={() => handlePayNow("EFFLUENT_PIPELINE_PAYMENT")}
-            />
+            <View style={styles.paymentActionsContainer}>
+              <ServiceChargeRef a="15.00" b="0.00" c="0.75" label="Service Charge Reference" />
+              <View style={styles.paymentActions}>
+                <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
+                <PayButtons
+                  onPayLater={() => handlePayLater("EFFLUENT_PIPELINE_PAYMENT")}
+                  onPayNow={() => handlePayNow("EFFLUENT_PIPELINE_PAYMENT")}
+                />
+              </View>
+            </View>
           </View>
         </View>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
-      </>
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
+      </View>
     );
   };
 
+  // ─── Render: Marine Payment ──────────────────────────────────────────────
   const renderMarinePayment = () => {
     const totalWithGst = marineTotalWithGst;
     const tdsAmount = marineTdsAmount;
     const gstResult = applyGst(marineSubtotal);
     
     return (
-      <>
-        <View style={styles.cardBody}>
-          <View style={styles.panel}>
-            <View style={styles.panelHeading}>
-              <Text style={styles.panelHeadingText}>{CONTEXT_HEADING}</Text>
-            </View>
-            <View style={styles.panelBody}>
-              <ScrollView horizontal>
-                <View style={styles.tableContainer}>
-                  <View style={styles.tableHeader}>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 30 }]}>#</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Waste Details</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Quantity</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Unit</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(A)</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(B)</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(C)</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Sub Total</Text>
-                    <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Total</Text>
-                  </View>
-                  <View style={styles.tableRow}>
-                    <Text style={[styles.tableCell, styles.textCenter, { width: 30 }]}>1</Text>
-                    <Text style={[styles.tableCell, { width: 150 }]}>Marine Discharge</Text>
-                    <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{marineQuantity.toFixed(2)}</Text>
-                    <Text style={[styles.tableCell, { width: 70 }]}>KL</Text>
-                    <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{marineBaseRate.toFixed(2)}</Text>
-                    <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>0.00</Text>
-                    <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{effluentCessRate.toFixed(2)}</Text>
-                    <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{marineTotalRate.toFixed(2)}</Text>
-                    <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{marineSubtotal.toFixed(2)}</Text>
-                  </View>
-                  <GstRows
-                    subtotal={marineSubtotal}
-                    tdsAmount={tdsAmount}
-                    netAmount={gstResult.netAmount}
-                    sgst={gstResult.sgst}
-                    cgst={gstResult.cgst}
-                    totalWithGst={totalWithGst}
-                    applyTds={applyTds}
-                    onTdsChange={setApplyTds}
-                  />
+      <View style={styles.cardBody}>
+        <View style={styles.panel}>
+          <View style={styles.panelHeading}>
+            <Text style={styles.panelHeadingText}>{CONTEXT_HEADING}</Text>
+          </View>
+          <View style={styles.panelBody}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 30 }]}>#</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 140 }]}>Waste Details</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Qty</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Unit</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(A)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(B)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(C)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Sub Total</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Total</Text>
                 </View>
-              </ScrollView>
-
-              <View style={styles.paymentActionsContainer}>
-                <ServiceChargeRef
-                  a="10.00"
-                  b="0.00"
-                  c="0.75"
-                  label="Service Charge Reference"
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.textCenter, { width: 30 }]}>1</Text>
+                  <Text style={[styles.tableCell, { width: 140 }]}>Marine Discharge</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{marineQuantity.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, { width: 60 }]}>KL</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{marineBaseRate.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>0.00</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{effluentCessRate.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{marineTotalRate.toFixed(2)}</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{marineSubtotal.toFixed(2)}</Text>
+                </View>
+                <GstRows
+                  subtotal={marineSubtotal}
+                  tdsAmount={tdsAmount}
+                  netAmount={gstResult.netAmount}
+                  sgst={gstResult.sgst}
+                  cgst={gstResult.cgst}
+                  totalWithGst={totalWithGst}
+                  applyTds={applyTds}
+                  onTdsChange={setApplyTds}
                 />
-                <View style={styles.paymentActions}>
-                  <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
-                  <PayButtons
-                    onPayLater={() => handlePayLater("MARINE_DISCHARGE")}
-                    onPayNow={() => handlePayNow("MARINE_DISCHARGE")}
-                  />
-                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.paymentActionsContainer}>
+              <ServiceChargeRef a="10.00" b="0.00" c="0.75" label="Service Charge Reference" />
+              <View style={styles.paymentActions}>
+                <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
+                <PayButtons
+                  onPayLater={() => handlePayLater("MARINE_DISCHARGE")}
+                  onPayNow={() => handlePayNow("MARINE_DISCHARGE")}
+                />
               </View>
             </View>
           </View>
         </View>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
-      </>
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
+      </View>
     );
   };
 
@@ -907,7 +839,6 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     const gstResult = applyGst(subtotal);
     const totalWithGst = gstResult.totalAmount;
     const tdsAmount = applyTds ? subtotal * TDS_RATE : 0;
-    const totalAfterTds = totalWithGst - tdsAmount;
     
     return (
       <View style={styles.cardBody}>
@@ -916,17 +847,17 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
             <Text style={styles.panelHeadingText}>{CONTEXT_HEADING}</Text>
           </View>
           <View style={styles.panelBody}>
-            <ScrollView horizontal>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.tableContainer}>
                 <View style={styles.tableHeader}>
                   <Text style={[styles.tableCell, styles.headerCell, { width: 30 }]}>#</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Waste Details</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Quantity</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Unit</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(A)</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(B)</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>(C)</Text>
-                  <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Sub Total</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 140 }]}>Waste Details</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Qty</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Unit</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(A)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(B)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 45 }]}>(C)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Sub Total</Text>
                   <Text style={[styles.tableCell, styles.headerCell, { width: 70 }]}>Total</Text>
                 </View>
                 {data?.wastes?.map((waste, i) => {
@@ -934,25 +865,17 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
                   return (
                     <View key={i} style={styles.tableRow}>
                       <Text style={[styles.tableCell, { width: 30 }]}>{i + 1}</Text>
-                      <View style={[styles.tableCell, { width: 150 }]}>
-                        <Text>{data?.waste_type_name || "-"}</Text>
-                        <Text style={styles.transactionId}>
-                          Transaction Id:{" "}
-                          {waste?.generator_approval_transaction_number &&
-                          waste?.generator_approval_transaction_number !== "null"
-                            ? waste?.generator_approval_transaction_number
-                            : "-"}
-                        </Text>
+                      <View style={[styles.tableCell, { width: 140 }]}>
+                        <Text style={styles.wasteNameText}>{data?.waste_type_name || "-"}</Text>
+                        <Text style={styles.transactionId}>Txn: {waste?.generator_approval_transaction_number && waste?.generator_approval_transaction_number !== "null" ? waste?.generator_approval_transaction_number : "-"}</Text>
                       </View>
                       <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{quantity}</Text>
-                      <Text style={[styles.tableCell, { width: 70 }]}>{waste?.unit || "-"}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{a}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{b?.toFixed(2)}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 50 }]}>{c?.toFixed(2)}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{subTotalPerTon}</Text>
-                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>
-                        {(subTotalPerTon * quantity)?.toFixed(2)}
-                      </Text>
+                      <Text style={[styles.tableCell, { width: 60 }]}>{waste?.unit || "-"}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{a}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{b?.toFixed(2)}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 45 }]}>{c?.toFixed(2)}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{subTotalPerTon}</Text>
+                      <Text style={[styles.tableCell, styles.textAlignRight, { width: 70 }]}>{(subTotalPerTon * quantity)?.toFixed(2)}</Text>
                     </View>
                   );
                 })}
@@ -970,35 +893,14 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
             </ScrollView>
 
             <View style={styles.recyclableActionsContainer}>
-              <ServiceChargeRef
-                a={5.0}
-                b={b}
-                c={((a || 0) + (b || 0)) * 0.05}
-                kms={data?.totalKms}
-              />
+              <ServiceChargeRef a={5.0} b={b} c={((a || 0) + (b || 0)) * 0.05} kms={data?.totalKms} />
 
               {!recyclable ? (
                 <View style={styles.recyclableButtons}>
-                  <TouchableOpacity
-                    style={[styles.button, styles.rejectButton]}
-                    onPress={() =>
-                      handleRecyclableAction(
-                        data?.transportvehicleselectionid,
-                        "REJECTED",
-                      )
-                    }
-                  >
+                  <TouchableOpacity style={[styles.button, styles.rejectButton]} onPress={() => handleRecyclableAction(data?.transportvehicleselectionid, "REJECTED")} activeOpacity={0.8}>
                     <Text style={styles.buttonText}>Reject</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.button, styles.acceptButton]}
-                    onPress={() =>
-                      handleRecyclableAction(
-                        data?.transportvehicleselectionid,
-                        "ACCEPTED",
-                      )
-                    }
-                  >
+                  <TouchableOpacity style={[styles.button, styles.acceptButton]} onPress={() => handleRecyclableAction(data?.transportvehicleselectionid, "ACCEPTED")} activeOpacity={0.8}>
                     <Text style={styles.buttonText}>Accept for Payment</Text>
                   </TouchableOpacity>
                 </View>
@@ -1014,21 +916,14 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
             </View>
           </View>
         </View>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
       </View>
     );
   };
 
   // ─── Render: Fly Ash Payment ─────────────────────────────────────────────
   const renderFlyashPayment = () => {
-    const {
-      flyAshSubtotal,
-      flyAshSgst,
-      flyAshCgst,
-      flyAshTotalWithGst,
-      flyAshTdsAmount,
-      flyAshTotalAfterTds,
-    } = getFlyAshAmounts();
+    const { flyAshSubtotal, flyAshSgst, flyAshCgst, flyAshTotalWithGst, flyAshTdsAmount } = getFlyAshAmounts();
 
     return (
       <View style={styles.cardBody}>
@@ -1037,70 +932,56 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
             <Text style={styles.panelHeadingText}>{CONTEXT_HEADING}</Text>
           </View>
           <View style={styles.panelBody}>
-            <View style={styles.tableContainer}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>S.No</Text>
-                <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Payment Type</Text>
-                <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Quantity (T)</Text>
-                <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Service Charge (T)</Text>
-                <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Price</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 50 }]}>S.No</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Payment Type</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Qty (T)</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Service Charge</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 80 }]}>Price</Text>
+                </View>
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableCell, styles.textCenter, { width: 50 }]}>1</Text>
+                  <Text style={[styles.tableCell, { width: 120 }]}>Fly Ash Payment</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
+                    {vehicleList?.reduce((total, waste) => total + Number(waste?.quantity || 0), 0).toFixed(2)}
+                  </Text>
+                  <Text style={[styles.tableCell, { width: 120 }]}>Rs. 5</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
+                    {vehicleList?.reduce((total, waste) => total + Number(waste?.amount || 0), 0).toFixed(2)}
+                  </Text>
+                </View>
+                <View style={[styles.tableRow, styles.totalRow]}>
+                  <Text style={[styles.tableCell, { width: 370, textAlign: 'right' }]}>
+                    <Text style={styles.bold}>Sub Total</Text>
+                  </Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
+                    <Text style={styles.bold}>{flyAshSubtotal?.toFixed(2)}</Text>
+                  </Text>
+                </View>
+                <GstRows
+                  subtotal={flyAshSubtotal}
+                  tdsAmount={flyAshTdsAmount}
+                  netAmount={flyAshSubtotal}
+                  sgst={flyAshSgst}
+                  cgst={flyAshCgst}
+                  totalWithGst={flyAshTotalWithGst}
+                  applyTds={applyTds}
+                  onTdsChange={setApplyTds}
+                />
               </View>
-              <View style={styles.tableRow}>
-                <Text style={[styles.tableCell, styles.textCenter, { width: 50 }]}>1</Text>
-                <Text style={[styles.tableCell, { width: 120 }]}>Fly Ash Payment</Text>
-                <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
-                  {vehicleList
-                    ?.reduce(
-                      (total, waste) => total + Number(waste?.quantity || 0),
-                      0,
-                    )
-                    .toFixed(2)}
-                </Text>
-                <Text style={[styles.tableCell, { width: 120 }]}>Rs. 5</Text>
-                <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
-                  {vehicleList
-                    ?.reduce(
-                      (total, waste) => total + Number(waste?.amount || 0),
-                      0,
-                    )
-                    .toFixed(2)}
-                </Text>
-              </View>
-              <View style={[styles.tableRow, styles.totalRow]}>
-                <Text style={[styles.tableCell, { width: 370, textAlign: 'right' }]}>
-                  <Text style={styles.bold}>Sub Total</Text>
-                </Text>
-                <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
-                  <Text style={styles.bold}>{flyAshSubtotal?.toFixed(2)}</Text>
-                </Text>
-              </View>
-              <GstRows
-                subtotal={flyAshSubtotal}
-                tdsAmount={flyAshTdsAmount}
-                netAmount={flyAshSubtotal}
-                sgst={flyAshSgst}
-                cgst={flyAshCgst}
-                totalWithGst={flyAshTotalWithGst}
-                applyTds={applyTds}
-                onTdsChange={setApplyTds}
-              />
-            </View>
+            </ScrollView>
 
             <View style={styles.flyashActions}>
               {!confirmPayment ? (
-                <TouchableOpacity
-                  style={[styles.button, styles.confirmButton]}
-                  onPress={() => setConfirmPayment(true)}
-                >
+                <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={() => setConfirmPayment(true)} activeOpacity={0.8}>
                   <Text style={styles.buttonText}>Confirm & Proceed</Text>
                 </TouchableOpacity>
               ) : (
                 <View style={styles.paymentActions}>
                   <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
-                  <TouchableOpacity
-                    style={[styles.button, styles.payNowButton]}
-                    onPress={() => handlePayNow("FLY_ASH_DISPOSAL_PAYMENT")}
-                  >
+                  <TouchableOpacity style={[styles.button, styles.payNowButton]} onPress={() => handlePayNow("FLY_ASH_DISPOSAL_PAYMENT")} activeOpacity={0.8}>
                     <Text style={styles.buttonText}>PAY NOW</Text>
                   </TouchableOpacity>
                 </View>
@@ -1108,10 +989,10 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
             </View>
           </View>
         </View>
-        <TouchableOpacity onPress={ShowTerms} style={styles.termsLink}>
+        <TouchableOpacity onPress={ShowTerms} style={styles.termsLink} activeOpacity={0.7}>
           <Text style={styles.termsText}>* Terms & Conditions for your reference</Text>
         </TouchableOpacity>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
       </View>
     );
   };
@@ -1121,63 +1002,59 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     const gstResult = applyGst(subtotal);
     const totalWithGst = gstResult.totalAmount;
     const tdsAmount = applyTds ? subtotal * TDS_RATE : 0;
-    const totalAfterTds = totalWithGst - tdsAmount;
     
     return (
-      <>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardHeaderText}>
-            Make your vehicle payment for your full access
-          </Text>
-        </View>
-        <View style={styles.cardBody}>
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Sl.No</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Vehicle Number</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Vehicle Type</Text>
-              <Text style={[styles.tableCell, styles.headerCell, styles.textAlignRight, { width: 80 }]}>Price</Text>
-            </View>
-            {vehicleList?.map((vv, i) => (
-              <View key={i} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { width: 60 }]}>{i + 1}</Text>
-                <View style={[styles.tableCell, { width: 150 }]}>
-                  <Text>{vv.vehicle_no}</Text>
-                  <Text style={styles.vehicleDate}>
-                    {new Date().toLocaleDateString("en-GB")} –{" "}
-                    {new Date(
-                      new Date().setFullYear(new Date().getFullYear() + 1),
-                    ).toLocaleDateString("en-GB")}
-                  </Text>
+      <View style={styles.cardBody}>
+        <View style={styles.panel}>
+          <View style={styles.panelHeading}>
+            <Text style={styles.panelHeadingText}>Vehicle Registration Payment</Text>
+          </View>
+          <View style={styles.panelBody}>
+            <Text style={styles.vehicleInfoText}>Make your vehicle payment for your full access</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Sl.No</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Vehicle Number</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Vehicle Type</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, styles.textAlignRight, { width: 80 }]}>Price</Text>
                 </View>
-                <Text style={[styles.tableCell, { width: 120 }]}>{vv.vehicle_type_name}</Text>
-                <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{VEHICLE_FEE}</Text>
+                {vehicleList?.map((vv, i) => (
+                  <View key={i} style={styles.tableRow}>
+                    <Text style={[styles.tableCell, { width: 60 }]}>{i + 1}</Text>
+                    <View style={[styles.tableCell, { width: 150 }]}>
+                      <Text style={styles.vehicleNumberText}>{vv.vehicle_no}</Text>
+                      <Text style={styles.vehicleDate}>
+                        {new Date().toLocaleDateString("en-GB")} – {new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString("en-GB")}
+                      </Text>
+                    </View>
+                    <Text style={[styles.tableCell, { width: 120 }]}>{vv.vehicle_type_name}</Text>
+                    <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{VEHICLE_FEE}</Text>
+                  </View>
+                ))}
+                <GstRows
+                  subtotal={subtotal}
+                  tdsAmount={tdsAmount}
+                  netAmount={gstResult.netAmount}
+                  sgst={gstResult.sgst}
+                  cgst={gstResult.cgst}
+                  totalWithGst={totalWithGst}
+                  applyTds={applyTds}
+                  onTdsChange={setApplyTds}
+                />
               </View>
-            ))}
-            <GstRows
-              subtotal={subtotal}
-              tdsAmount={tdsAmount}
-              netAmount={gstResult.netAmount}
-              sgst={gstResult.sgst}
-              cgst={gstResult.cgst}
-              totalWithGst={totalWithGst}
-              applyTds={applyTds}
-              onTdsChange={setApplyTds}
-            />
-          </View>
+            </ScrollView>
 
-          <View style={styles.vehiclePaymentActions}>
-            <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
-            <TouchableOpacity
-              style={[styles.button, styles.payNowButton]}
-              onPress={() => handlePayNow("VEHICLE_REGISTRATION")}
-            >
-              <Text style={styles.buttonText}>PAY NOW</Text>
-            </TouchableOpacity>
+            <View style={styles.vehiclePaymentActions}>
+              <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
+              <TouchableOpacity style={[styles.button, styles.payNowButton]} onPress={() => handlePayNow("VEHICLE_REGISTRATION")} activeOpacity={0.8}>
+                <Text style={styles.buttonText}>PAY NOW</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
-      </>
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
+      </View>
     );
   };
 
@@ -1186,133 +1063,123 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
     const gstResult = applyGst(subtotal);
     const totalWithGst = gstResult.totalAmount;
     const tdsAmount = applyTds ? subtotal * TDS_RATE : 0;
-    const totalAfterTds = totalWithGst - tdsAmount;
     
     return (
-      <>
-        <View style={styles.cardHeader}>
-          <Text style={styles.cardHeaderText}>Registration Payment Fee</Text>
-          <Text style={styles.transporterInfo}>
-            Its the Registration/Annual payment for every Transporters who
-            registered with us. Once this payment has been done, you will have the
-            access to add the vehicle details.
-          </Text>
-        </View>
-        <View style={styles.cardBody}>
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Sl.No</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 200 }]}>Description</Text>
-              <Text style={[styles.tableCell, styles.headerCell, styles.textAlignRight, { width: 80 }]}>Price</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, { width: 60 }]}>1</Text>
-              <Text style={[styles.tableCell, { width: 200 }]}>Registration Fee</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{subtotal?.toFixed(2)}</Text>
-            </View>
-            <GstRows
-              subtotal={subtotal}
-              tdsAmount={tdsAmount}
-              netAmount={gstResult.netAmount}
-              sgst={gstResult.sgst}
-              cgst={gstResult.cgst}
-              totalWithGst={totalWithGst}
-              applyTds={applyTds}
-              onTdsChange={setApplyTds}
-            />
+      <View style={styles.cardBody}>
+        <View style={styles.panel}>
+          <View style={styles.panelHeading}>
+            <Text style={styles.panelHeadingText}>Registration Payment Fee</Text>
           </View>
+          <View style={styles.panelBody}>
+            <Text style={styles.transporterInfoText}>
+              It's the Registration/Annual payment for every Transporter who registered with us. 
+              Once this payment has been done, you will have the access to add the vehicle details.
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Sl.No</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 200 }]}>Description</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, styles.textAlignRight, { width: 80 }]}>Price</Text>
+                </View>
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { width: 60 }]}>1</Text>
+                  <Text style={[styles.tableCell, { width: 200 }]}>Registration Fee</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{subtotal?.toFixed(2)}</Text>
+                </View>
+                <GstRows
+                  subtotal={subtotal}
+                  tdsAmount={tdsAmount}
+                  netAmount={gstResult.netAmount}
+                  sgst={gstResult.sgst}
+                  cgst={gstResult.cgst}
+                  totalWithGst={totalWithGst}
+                  applyTds={applyTds}
+                  onTdsChange={setApplyTds}
+                />
+              </View>
+            </ScrollView>
 
-          <View style={styles.transporterActions}>
-            {flag && (
-              <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
-            )}
-            <View>
-              {!flag ? (
-                <TouchableOpacity
-                  style={[styles.button, styles.confirmButton]}
-                  onPress={() => setFlag(true)}
-                >
-                  <Text style={styles.buttonText}>CONFIRM & PROCEED</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.button, styles.payNowButton]}
-                  onPress={() => handlePayNow("TRANSPORT_REGISTRATION")}
-                >
-                  <Text style={styles.buttonText}>PAY NOW</Text>
-                </TouchableOpacity>
-              )}
+            <View style={styles.transporterActions}>
+              {flag && <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />}
+              <View>
+                {!flag ? (
+                  <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={() => setFlag(true)} activeOpacity={0.8}>
+                    <Text style={styles.buttonText}>CONFIRM & PROCEED</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={[styles.button, styles.payNowButton]} onPress={() => handlePayNow("TRANSPORT_REGISTRATION")} activeOpacity={0.8}>
+                    <Text style={styles.buttonText}>PAY NOW</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </View>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
-      </>
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
+      </View>
     );
   };
 
-  // **************************** Other State Industry Mapping ***********************************
+  // ─── Render: Other State Industry Mapping ──────────────────────────────
   const renderOtherStateIndustryMappingPayment = () => {
     const subtotalAmount = data?.annual_fee || 0;
     const gstResult = applyGst(subtotalAmount);
     const totalWithGst = gstResult.totalAmount;
     const tdsAmount = applyTds ? subtotalAmount * TDS_RATE : 0;
-    const totalAfterTds = totalWithGst - tdsAmount;
     
     return (
-      <>
-        <View style={styles.cardBody}>
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Sl.No</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Industry Name</Text>
-              <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Payment Status</Text>
-              <Text style={[styles.tableCell, styles.headerCell, styles.textAlignRight, { width: 80 }]}>Price</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, { width: 60 }]}>1</Text>
-              <Text style={[styles.tableCell, { width: 150 }]}>{data?.industry_name}</Text>
-              <Text style={[styles.tableCell, { width: 120 }]}>Pending</Text>
-              <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>
-                {data.annual_fee?.toFixed(2)}
-              </Text>
-            </View>
-            <GstRows
-              subtotal={subtotalAmount}
-              tdsAmount={tdsAmount}
-              netAmount={gstResult.netAmount}
-              sgst={gstResult.sgst}
-              cgst={gstResult.cgst}
-              totalWithGst={totalWithGst}
-              applyTds={applyTds}
-              onTdsChange={setApplyTds}
-            />
+      <View style={styles.cardBody}>
+        <View style={styles.panel}>
+          <View style={styles.panelHeading}>
+            <Text style={styles.panelHeadingText}>Other State Industry Mapping Payment</Text>
           </View>
+          <View style={styles.panelBody}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tableContainer}>
+                <View style={styles.tableHeader}>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 60 }]}>Sl.No</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 150 }]}>Industry Name</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, { width: 120 }]}>Payment Status</Text>
+                  <Text style={[styles.tableCell, styles.headerCell, styles.textAlignRight, { width: 80 }]}>Price</Text>
+                </View>
+                <View style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { width: 60 }]}>1</Text>
+                  <Text style={[styles.tableCell, { width: 150 }]}>{data?.industry_name}</Text>
+                  <Text style={[styles.tableCell, { width: 120 }]}>Pending</Text>
+                  <Text style={[styles.tableCell, styles.textAlignRight, { width: 80 }]}>{data.annual_fee?.toFixed(2)}</Text>
+                </View>
+                <GstRows
+                  subtotal={subtotalAmount}
+                  tdsAmount={tdsAmount}
+                  netAmount={gstResult.netAmount}
+                  sgst={gstResult.sgst}
+                  cgst={gstResult.cgst}
+                  totalWithGst={totalWithGst}
+                  applyTds={applyTds}
+                  onTdsChange={setApplyTds}
+                />
+              </View>
+            </ScrollView>
 
-          <View style={styles.transporterActions}>
-            {flag && (
-              <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />
-            )}
-            <View>
-              {!flag ? (
-                <TouchableOpacity
-                  style={[styles.button, styles.confirmButton]}
-                  onPress={() => setFlag(true)}
-                >
-                  <Text style={styles.buttonText}>CONFIRM & PROCEED</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.button, styles.payNowButton]}
-                  onPress={() => handlePayNow("OTHER_STATE_INDUSTRY_MAPPING")}
-                >
-                  <Text style={styles.buttonText}>PAY NOW</Text>
-                </TouchableOpacity>
-              )}
+            <View style={styles.transporterActions}>
+              {flag && <GatewaySelector paymentMode={paymentMode} onChange={setPaymentMode} />}
+              <View>
+                {!flag ? (
+                  <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={() => setFlag(true)} activeOpacity={0.8}>
+                    <Text style={styles.buttonText}>CONFIRM & PROCEED</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={[styles.button, styles.payNowButton]} onPress={() => handlePayNow("OTHER_STATE_INDUSTRY_MAPPING")} activeOpacity={0.8}>
+                    <Text style={styles.buttonText}>PAY NOW</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         </View>
-        {loading && <ActivityIndicator size="large" style={styles.loader} />}
-      </>
+        {loading && <ActivityIndicator size="large" color="#2e7d32" style={styles.loader} />}
+      </View>
     );
   };
 
@@ -1326,36 +1193,37 @@ function RegistrationPayment({ type, vehicleList, onPayNow: propOnPayNow }) {
   ].includes(type);
 
   return (
-    <ScrollView style={styles.container}>
-      {/* {type === "MANIFEST_PAYMENT" &&
-        data?.current_status !== "Redirection Approved By Admin" && (
-          <StepperProgress step={2} />
-        )} */}
-      <View style={styles.card}>
-        {hasPaymentHeader && (
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>
-              <Text>₹ </Text> Payment Details
-            </Text>
-          </View>
-        )}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar backgroundColor="#2e7d32" barStyle="light-content" />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.card}>
+          {hasPaymentHeader && (
+            <View style={styles.cardHeader}>
+              <Icon name="payment" size={24} color="#2e7d32" />
+              <Text style={styles.cardTitle}>Payment Details</Text>
+            </View>
+          )}
 
-        {type === "MANIFEST_PAYMENT" && renderTransportSelectionPayment()}
-        {type === "VEHICLE_REGISTRATION" && renderVehiclePayment()}
-        {type === "TRANSPORT_REGISTRATION" && renderTransporterPayment()}
-        {type === "EFFLUENT_PIPELINE_PAYMENT" && renderEffluentPayment()}
-        {type === "RECYCLABLE_PAYMENT" && renderRecyclablePayment()}
-        {type === "FLY_ASH_DISPOSAL_PAYMENT" && renderFlyashPayment()}
-        {type === "MARINE_DISCHARGE" && renderMarinePayment()}
-        {type === "OTHER_STATE_INDUSTRY_MAPPING" &&
-          renderOtherStateIndustryMappingPayment()}
-      </View>
-    </ScrollView>
+          {type === "MANIFEST_PAYMENT" && renderTransportSelectionPayment()}
+          {type === "VEHICLE_REGISTRATION" && renderVehiclePayment()}
+          {type === "TRANSPORT_REGISTRATION" && renderTransporterPayment()}
+          {type === "EFFLUENT_PIPELINE_PAYMENT" && renderEffluentPayment()}
+          {type === "RECYCLABLE_PAYMENT" && renderRecyclablePayment()}
+          {type === "FLY_ASH_DISPOSAL_PAYMENT" && renderFlyashPayment()}
+          {type === "MARINE_DISCHARGE" && renderMarinePayment()}
+          {type === "OTHER_STATE_INDUSTRY_MAPPING" && renderOtherStateIndustryMappingPayment()}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -1363,78 +1231,89 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     margin: 10,
-    borderRadius: 8,
-    elevation: 2,
+    borderRadius: 12,
+    elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    overflow: 'hidden',
   },
   cardHeader: {
-    padding: 15,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8f9fa',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  cardHeaderText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#007bff',
+    borderBottomColor: '#e8ecf1',
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
+    color: '#2e7d32',
+    marginLeft: 8,
   },
   cardBody: {
-    padding: 15,
+    padding: 12,
   },
   panel: {
-    marginBottom: 15,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#e8ecf1',
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   panelHeading: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+    backgroundColor: '#2e7d32',
+    padding: 12,
   },
   panelHeadingText: {
     color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: '600',
   },
   panelBody: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
+    padding: 12,
   },
   tableContainer: {
-    marginVertical: 10,
+    marginVertical: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#e8f5e9',
     borderWidth: 1,
     borderColor: '#ddd',
-    paddingVertical: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   tableRow: {
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: '#ddd',
     borderTopWidth: 0,
-    paddingVertical: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+  },
+  totalRow: {
+    backgroundColor: '#f8f9fa',
+    borderTopWidth: 1,
+    borderColor: '#ddd',
   },
   tableCell: {
-    paddingHorizontal: 5,
-    paddingVertical: 3,
-    fontSize: 12,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    fontSize: 11,
+    color: '#333',
   },
   headerCell: {
     fontWeight: 'bold',
     textAlign: 'center',
+    fontSize: 11,
+    color: '#1e3a5f',
   },
   textAlignRight: {
     textAlign: 'right',
@@ -1442,247 +1321,333 @@ const styles = StyleSheet.create({
   textCenter: {
     textAlign: 'center',
   },
+  wasteNameText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#333',
+  },
   transactionId: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#666',
+    marginTop: 2,
+  },
+  vehicleNumberText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#333',
   },
   vehicleDate: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#6c757d',
+    marginTop: 2,
+  },
+  vehicleInfoText: {
+    fontSize: 14,
+    color: '#2e7d32',
+    marginBottom: 12,
+    fontWeight: '500',
+  },
+  transporterInfoText: {
+    fontSize: 13,
+    color: '#2e7d32',
+    marginBottom: 12,
+    lineHeight: 20,
   },
   bold: {
     fontWeight: 'bold',
   },
-  totalRow: {
-    backgroundColor: '#f8f9fa',
-    fontWeight: 'bold',
+  gstContainer: {
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderColor: '#ddd',
+    paddingTop: 8,
   },
-  row: {
+  gstRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 5,
+    alignItems: 'center',
+    paddingVertical: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#f0f0f0',
   },
-  rowLabel: {
+  totalGstRow: {
+    borderBottomWidth: 0,
+    paddingTop: 8,
+    marginTop: 4,
+  },
+  gstLabel: {
+    fontSize: 13,
+    color: '#333',
     flex: 1,
-    fontSize: 14,
   },
-  rowValue: {
-    fontSize: 14,
+  gstValue: {
+    fontSize: 13,
+    color: '#333',
     minWidth: 80,
   },
-  tdsContainer: {
+  totalGstLabel: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1e3a5f',
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
-  checkboxContainer: {
+  totalGstValue: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  tdsCheckboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   checkbox: {
     width: 20,
     height: 20,
     borderWidth: 2,
-    borderColor: '#007bff',
+    borderColor: '#2e7d32',
     borderRadius: 4,
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
   checkboxChecked: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#2e7d32',
   },
   tdsText: {
-    fontSize: 14,
+    fontSize: 13,
+    color: '#333',
   },
   tdsNote: {
     color: '#dc3545',
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  totalValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 11,
   },
   serviceRefContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 4,
+    borderRadius: 6,
     backgroundColor: '#f8f9fa',
     borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
-    minWidth: 300,
-    marginVertical: 10,
+    borderLeftColor: '#2e7d32',
+    minWidth: width * 0.8,
+    marginVertical: 8,
   },
   serviceRefTitle: {
     fontWeight: 'bold',
     marginBottom: 4,
-    color: '#007bff',
+    color: '#2e7d32',
+    fontSize: 13,
+  },
+  serviceRefItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  serviceRefLabel: {
+    fontWeight: '600',
+    color: '#333',
+    fontSize: 12,
+    marginRight: 4,
+    width: 24,
   },
   serviceRefText: {
-    fontSize: 13,
+    fontSize: 12,
+    color: '#333',
+    flex: 1,
   },
   gatewayContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    padding: 8,
+    paddingVertical: 8,
     borderRadius: 4,
+    gap: 12,
   },
   gatewayOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
   },
   gatewayOptionSelected: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 4,
+    backgroundColor: '#e8f5e9',
+    borderColor: '#2e7d32',
   },
   radioCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#007bff',
+    borderColor: '#2e7d32',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 6,
   },
   radioSelected: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#007bff',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2e7d32',
   },
   gatewayLabel: {
-    fontSize: 14,
+    fontSize: 13,
+    color: '#666',
+    marginLeft: 4,
+  },
+  gatewayLabelSelected: {
+    color: '#2e7d32',
+    fontWeight: '500',
   },
   payButtonsContainer: {
     flexDirection: 'row',
     gap: 8,
-    marginVertical: 10,
+    marginVertical: 8,
   },
   button: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 4,
+    borderRadius: 8,
     minWidth: 100,
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 13,
   },
   payNowButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#2e7d32',
   },
   payLaterButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#1976d2',
   },
   confirmButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#2e7d32',
   },
   acceptButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#2e7d32',
   },
   rejectButton: {
     backgroundColor: '#dc3545',
   },
   submitButton: {
-    backgroundColor: '#17a2b8',
+    backgroundColor: '#2e7d32',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
-  flexRow: {
+  submitButtonRight: {
+    backgroundColor: '#2e7d32',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-end',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  submitContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    marginTop: 8,
   },
   paymentActionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: 'column',
     width: '100%',
-    gap: 20,
-    marginVertical: 10,
+    gap: 12,
+    marginVertical: 8,
   },
   paymentActions: {
     alignItems: 'flex-end',
-    gap: 12,
+    gap: 8,
   },
   recyclableActionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: 'column',
     width: '100%',
-    gap: 20,
-    marginVertical: 10,
+    gap: 12,
+    marginVertical: 8,
   },
   recyclableButtons: {
     flexDirection: 'row',
-    gap: 16,
-    marginTop: 20,
+    gap: 12,
+    marginTop: 8,
+    justifyContent: 'center',
   },
   vehiclePaymentActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    height: 80,
-    marginVertical: 10,
+    marginVertical: 8,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   transporterActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 8,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   flyashActions: {
     justifyContent: 'flex-end',
-    marginTop: 16,
+    marginTop: 12,
   },
   noteContainer: {
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 4,
+    borderRadius: 6,
     backgroundColor: '#f8f9fa',
     borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
+    borderLeftColor: '#2e7d32',
+    flex: 1,
+    marginRight: 8,
   },
   noteText: {
-    fontSize: 13,
+    fontSize: 12,
+    color: '#333',
   },
   noteTitle: {
     fontWeight: 'bold',
-    color: '#007bff',
+    color: '#2e7d32',
     marginTop: 4,
+    fontSize: 13,
   },
   termsLink: {
     justifyContent: 'flex-end',
     marginTop: 8,
+    paddingRight: 4,
   },
   termsText: {
-    fontSize: 15,
-    color: '#007bff',
-    textAlign: 'right',
-  },
-  transporterInfo: {
-    marginBottom: 0,
     fontSize: 13,
-    color: '#007bff',
+    color: '#2e7d32',
+    textAlign: 'right',
+    textDecorationLine: 'underline',
   },
   loader: {
-    marginVertical: 20,
+    marginVertical: 16,
   },
 });
 

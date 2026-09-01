@@ -4,7 +4,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import HomeScreen from "./screens/HomeScreen";
-
 import { persistedStore, store } from "./reducers/allReducers";
 import SessionChecking from "./sitelayout/SessionChecking";
 import SiteLayout from "./sitelayout/SiteLayout";
@@ -14,7 +13,6 @@ import ModalPopup from "./sitelayout/ModalPopup";
 import Overlay from "./sitelayout/Overlay";
 import { ToastProvider } from "react-native-sprinkle-toast";
 
-// import TicketBooking from "./Bluetooth/TicketBooking";
 import GenerateQrCode from "./screens/GenerateQrCode";
 import AssignQrcode from "./screens/AssignQrcode";
 import Posting from "./screens/Posting";
@@ -35,6 +33,12 @@ import GenApprovedList from "./screens/GenApprovedList";
 import TransportVehicleSelection from "./screens/TransportVehicleSelection";
 import TransportersList from "./screens/TransportersList";
 import RegistrationPayment from "./screens/RegistrationPayment";
+import ManifestConfirmation from "./screens/ManifestConfirmation";
+import TransportAcknowledgement from "./screens/TransportAcknowledgement";
+// import TransportRejected from "./screens/TransportRejected";
+// import WebViewScreen from "./screens/WebViewScreen";
+// import PaymentScreen from "./screens/PaymentScreen";
+
 const Stack = createNativeStackNavigator();
 
 export default function Routes() {
@@ -65,27 +69,23 @@ export default function Routes() {
 
               <Stack.Screen name="ProfileUpdate">
                 {(props) => (
-                  // <SessionChecking navigation={props.navigation}>
                   <SiteLayout
                     navigation={props.navigation}
                     currentScreenName="ProfileUpdate"
                   >
                     <ProfileUpdate {...props} />
                   </SiteLayout>
-                  // </SessionChecking>
                 )}
               </Stack.Screen>
 
               <Stack.Screen name="ChangePassword">
                 {(props) => (
-                  // <SessionChecking navigation={props.navigation}>
                   <SiteLayout
                     navigation={props.navigation}
                     currentScreenName="ChangePassword"
                   >
                     <PaymentScreen {...props} />
                   </SiteLayout>
-                  // </SessionChecking>
                 )}
               </Stack.Screen>
 
@@ -228,6 +228,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="MasterDataAddVehicleTypes">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -241,6 +242,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="OpenRegistrations">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -254,6 +256,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="ManagePermittedQuantity">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -267,6 +270,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="AddWasteDisposal">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -280,6 +284,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="RecentWasteDisposalList">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -293,6 +298,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="InterestedWasteList">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -306,6 +312,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="GenApprovedList">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -319,6 +326,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="TransportVehicleSelection">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -332,6 +340,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="TransportersList">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -345,6 +354,7 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
               <Stack.Screen name="RegistrationPayment">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
@@ -358,6 +368,158 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
+
+              <Stack.Screen name="ManifestConfirmation">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="ManifestConfirmation"
+                      scrollEnabled={false}
+                    >
+                      <ManifestConfirmation {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* Transport Acknowledgement Screens */}
+              {/* Pending List */}
+              <Stack.Screen name="PendingList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="PendingList"
+                      scrollEnabled={false}
+                    >
+                      <TransportAcknowledgement 
+                        {...props} 
+                        screenType="PendingList"
+                        path="/PendingList"
+                      />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* Accepted List */}
+              <Stack.Screen name="AcceptedList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="AcceptedList"
+                      scrollEnabled={false}
+                    >
+                      <TransportAcknowledgement 
+                        {...props} 
+                        screenType="AcceptedList"
+                        path="/AcceptedList"
+                      />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* Rejected List */}
+              <Stack.Screen name="RejectedList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="RejectedList"
+                      scrollEnabled={false}
+                    >
+                      <TransportAcknowledgement 
+                        {...props} 
+                        screenType="RejectedList"
+                        path="/RejectedList"
+                      />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* Manifest List */}
+              <Stack.Screen name="ManifestList">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="ManifestList"
+                      scrollEnabled={false}
+                    >
+                      <TransportAcknowledgement 
+                        {...props} 
+                        screenType="ManifestList"
+                        path="/ManifestList"
+                      />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* Transport Rejected Screen */}
+              <Stack.Screen name="TransportRejected">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="TransportRejected"
+                      scrollEnabled={false}
+                    >
+                      <TransportRejected {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* Confirmation Required */}
+              <Stack.Screen name="ConfirmationRequired">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="ConfirmationRequired"
+                      scrollEnabled={false}
+                    >
+                      <ConfirmationRequired {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* Effluent Pipeline Discharge */}
+              <Stack.Screen name="EffluentPipelineDischarge">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="EffluentPipelineDischarge"
+                      scrollEnabled={false}
+                    >
+                      <EffluentPipelineDischarge {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
+              {/* List Marine Discharges */}
+              <Stack.Screen name="ListMarineDischarges">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="ListMarineDischarges"
+                      scrollEnabled={false}
+                    >
+                      <ListMarineDischarges {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+
             </Stack.Navigator>
           </NavigationContainer>
         </ToastProvider>

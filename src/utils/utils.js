@@ -262,6 +262,13 @@ export const RECYCLABLEVEHICLID = "api/user/transport-vehicle-selection-details"
 export const PAYMENTAPEMCL = "api/open/initiate"
 export const RECYCLABLE = "api/user/add-transport-vehicle-selection"
 export const WASTEDISPOSALINTERESTDETAILS = "api/user/waste-disposal-interest-details?wasteTypeId="
+export const RECEIVERDISPOSALMETHODS = "api/user/receiver-disposal-methods?receiverTypeId="
+export const GETMANIFEST = "api/user/transport-vehicle-selection-details?wasteDisposalId="
+export const REDIRECTIONREQUESTTOADMIN = "api/user/requestRedirectionToAdmin"
+export const REDIRECTIONRECEIVERS = "api/user/receiver-industries?receiverWasteType="
+export const POSTMANIFEST = "api/user/add-transport-vehicle-selection"
+export const RECEIVERREQUESTMANIFESTCLOSEADMIN = "api/user/requestManifestCloseToAdmin"
+export const TRANSPORTVEHICLESELECTIONDETAILS = "api/user/transport-vehicle-selection-details"
 
 // Add this to your utils.js file
 export const MARINEDISCHARGEDRILLDOWN = "/api/user/marine-discharge-dashboard-drilldown";
