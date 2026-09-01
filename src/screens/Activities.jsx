@@ -46,7 +46,7 @@ const Activities = () => {
       'startReading2-required',
       'Start Reading 2 is required',
       function(value) {
-        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        const hasSecondFlowMeter =rowData?.has_second_flow_meter;
         if (hasSecondFlowMeter) {
           return value && value.trim().length > 0;
         }
@@ -57,7 +57,7 @@ const Activities = () => {
       'marineSealImage2-required',
       'Marine Seal Image 2 is required',
       function(value) {
-        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        const hasSecondFlowMeter =rowData?.has_second_flow_meter;
         if (hasSecondFlowMeter) {
           return value && value.trim().length > 0;
         }
@@ -68,7 +68,7 @@ const Activities = () => {
       'startFlowMeterImage2-required',
       'Flow Meter Image 2 is required',
       function(value) {
-        const hasSecondFlowMeter = this.options.context?.hasSecondFlowMeter || false;
+        const hasSecondFlowMeter =rowData?.has_second_flow_meter;
         if (hasSecondFlowMeter) {
           return value && value.trim().length > 0;
         }
@@ -98,9 +98,9 @@ const Activities = () => {
       startReading: rowData?.start_reading || '',
       marineSealImage: null,
       startFlowMeterImage: null,
-      startReading2: rowData?.start_reading2 ?? 0,
-      marineSealImage2: null,
-      startFlowMeterImage2: null,
+      startReading2: rowData?.start_reading2 ?? 1000,
+      marineSealImage2: '',
+      startFlowMeterImage2: '',
     },
     validationSchema: startValidationSchema,
     validateOnChange: true,
@@ -109,9 +109,12 @@ const Activities = () => {
       HandleStartSubmit(values);
     },
     context: {
-      hasSecondFlowMeter: rowData?.has_second_flow_meter || false,
+      hasSecondFlowMeter: rowData?.has_second_flow_meter,
     },
   });
+
+  console.log("startformik",rowData?.has_second_flow_meter )
+  
 
   // ================= END FORMIK =================
   const endFormik = useFormik({
@@ -119,9 +122,9 @@ const Activities = () => {
     initialValues: {
       dischargeAction: '',
       endReading: '',
-      endFlowMeterImage: null,
+      endFlowMeterImage: '',
       endReading2: '',
-      endFlowMeterImage2: null,
+      endFlowMeterImage2: '',
     },
     validationSchema: endValidationSchema,
     validateOnChange: true,
@@ -240,7 +243,6 @@ const Activities = () => {
     GetData();
   }, []);
 
-  console.log("| rowData?.start_reading_edit_request_flag",rowData?.start_reading_edit_request_flag);
 
   // ================= RENDER START MODAL =================
   const renderStartModal = () => (
