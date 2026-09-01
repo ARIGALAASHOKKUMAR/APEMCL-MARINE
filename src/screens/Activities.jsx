@@ -123,7 +123,6 @@ const Activities = () => {
       dischargeAction: '',
       endReading: '',
       endFlowMeterImage: null,
-      dischargeAction2: '',
       endReading2: '',
       endFlowMeterImage2: null,
     },
@@ -571,7 +570,7 @@ const Activities = () => {
 
             {/* Discharge Type for Flow Meter 1 */}
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Discharge Type 1 <Text style={styles.star}>*</Text></Text>
+              <Text style={styles.label}>Discharge Type  <Text style={styles.star}>*</Text></Text>
               <View style={styles.pickerContainer}>
                 <Picker
                   selectedValue={endFormik.values.dischargeAction}
@@ -674,28 +673,7 @@ const Activities = () => {
             {rowData?.has_second_flow_meter && (
               <>
                 {/* Discharge Type for Flow Meter 2 */}
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>Discharge Type 2 <Text style={styles.star}>*</Text></Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={endFormik.values.dischargeAction2}
-                      onValueChange={(itemValue) => {
-                        endFormik.setFieldValue('dischargeAction2', itemValue);
-                        endFormik.setFieldTouched('dischargeAction2', true);
-                      }}
-                      style={styles.picker}
-                      dropdownIconColor="#666"
-                    >
-                      <Picker.Item label="Select" value="" />
-                      <Picker.Item label="Completed" value="1" />
-                      <Picker.Item label="Continue to Next day" value="2" />
-                      <Picker.Item label="Abort" value="3" />
-                    </Picker>
-                  </View>
-                  {endFormik.errors.dischargeAction2 && endFormik.touched.dischargeAction2 && (
-                    <Text style={styles.errorText}>{endFormik.errors.dischargeAction2}</Text>
-                  )}
-                </View>
+              
 
                 <View style={styles.sectionContainer}>
                   <View style={styles.sectionHeader}>
