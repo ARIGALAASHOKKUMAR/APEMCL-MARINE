@@ -34,6 +34,7 @@ import InterestedWasteList from "./screens/InterestedWasteList";
 import GenApprovedList from "./screens/GenApprovedList";
 import TransportVehicleSelection from "./screens/TransportVehicleSelection";
 import TransportersList from "./screens/TransportersList";
+import RegistrationPayment from "./screens/RegistrationPayment";
 const Stack = createNativeStackNavigator();
 
 export default function Routes() {
@@ -340,6 +341,19 @@ export default function Routes() {
                       scrollEnabled={false}
                     >
                       <TransportersList {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="RegistrationPayment">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="RegistrationPayment"
+                      scrollEnabled={false}
+                    >
+                      <RegistrationPayment {...props} />
                     </SiteLayout>
                   </SessionChecking>
                 )}

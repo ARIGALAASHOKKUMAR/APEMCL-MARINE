@@ -15,7 +15,7 @@ import {
   KeyboardAvoidingView,
 } from "react-native";
 import { useDispatch } from "react-redux";
-import { useFormik, FormikProvider, FieldArray } from "formik";
+import { useFormik, FormikProvider } from "formik";
 import * as Yup from "yup";
 import Icon from "react-native-vector-icons/Ionicons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -130,6 +130,8 @@ function TransportVehicleSelection() {
   const [mapLoading, setMapLoading] = useState(true);
   const [mapError, setMapError] = useState(false);
   const [routeData, setRouteData] = useState([]);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [isFirstRender, setIsFirstRender] = useState(true);
 
   // Route colors
   const routeColors = ["#2196F3", "#4CAF50", "#F44336"];
@@ -401,6 +403,7 @@ function TransportVehicleSelection() {
   // Generate routes with real road routing
   const generateRoutes = async () => {
     setMapLoading(true);
+    setMapLoaded(false);
 
     // Fetch main route
     const mainRoute = await fetchRoute(startLat, startLng, endLat, endLng, 1);
@@ -567,7 +570,7 @@ function TransportVehicleSelection() {
     setRoutes(finalRoutes);
     setRouteData(finalRoutes);
 
-    // Set default selection
+    // Set default selection - Route 1
     if (finalRoutes.length > 0) {
       setSelectedRoute(1);
       formik.setFieldValue("selectedRouteNo", "1");
@@ -576,6 +579,8 @@ function TransportVehicleSelection() {
     }
 
     setMapLoading(false);
+    setMapLoaded(true);
+    setIsFirstRender(false);
   };
 
   // Generate Leaflet Map HTML with road routes
@@ -585,6 +590,61 @@ function TransportVehicleSelection() {
     }
 
     const selectedRouteId = selectedRoute || 1;
+
+    // Get the selected route data
+    const selectedRouteData = routeData.find(r => r.id === selectedRouteId);
+    
+    // If no route data, show fallback
+    if (!selectedRouteData || !selectedRouteData.coordinates || selectedRouteData.coordinates.length === 0) {
+      return `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { margin: 0; padding: 0; overflow: hidden; background: #f0f0f0; }
+              #map { height: 100vh; width: 100vw; }
+            </style>
+          </head>
+          <body>
+            <div id="map"></div>
+            <script>
+              const map = L.map('map').setView([${(startLat + endLat) / 2}, ${(startLng + endLng) / 2}], 8);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+              }).addTo(map);
+              
+              // Add markers
+              L.marker([${startLat}, ${startLng}])
+                .addTo(map)
+                .bindPopup('Start Location');
+              L.marker([${endLat}, ${endLng}])
+                .addTo(map)
+                .bindPopup('Destination');
+              
+              // Draw simple line
+              L.polyline([
+                [${startLat}, ${startLng}],
+                [${endLat}, ${endLng}]
+              ], {
+                color: '#2196F3',
+                weight: 4,
+                opacity: 1
+              }).addTo(map);
+              
+              map.fitBounds([
+                [${startLat}, ${startLng}],
+                [${endLat}, ${endLng}]
+              ], { padding: [50, 50] });
+            </script>
+          </body>
+        </html>
+      `;
+    }
 
     return `
       <!DOCTYPE html>
@@ -684,6 +744,7 @@ function TransportVehicleSelection() {
             )};
             const selectedRouteId = ${selectedRouteId};
             
+            // Draw all routes
             routeData.forEach(route => {
               if (!route.coordinates || route.coordinates.length === 0) return;
               
@@ -705,19 +766,31 @@ function TransportVehicleSelection() {
               }).addTo(map);
             });
 
-            // Fit bounds
-            const bounds = [
-              [${startLat}, ${startLng}],
-              [${endLat}, ${endLng}]
-            ];
-            map.fitBounds(bounds, { padding: [60, 60] });
+            // Fit bounds to show all routes
+            const allCoords = [];
+            routeData.forEach(route => {
+              if (route.coordinates && route.coordinates.length > 0) {
+                route.coordinates.forEach(coord => {
+                  allCoords.push([coord.lat, coord.lng]);
+                });
+              }
+            });
+            
+            if (allCoords.length > 0) {
+              map.fitBounds(allCoords, { padding: [60, 60] });
+            } else {
+              map.fitBounds([
+                [${startLat}, ${startLng}],
+                [${endLat}, ${endLng}]
+              ], { padding: [60, 60] });
+            }
 
             // Send message to React Native when map is ready
             setTimeout(function() {
               if (window.ReactNativeWebView) {
                 window.ReactNativeWebView.postMessage('mapReady');
               }
-            }, 1000);
+            }, 500);
           </script>
         </body>
       </html>
@@ -745,12 +818,15 @@ function TransportVehicleSelection() {
     generateRoutes();
   }, []);
 
-  // Reload map when routes change
+  // Reload map when routes or selected route changes
   useEffect(() => {
-    if (webViewRef.current && routes.length > 0) {
-      webViewRef.current.reload();
+    if (webViewRef.current && routes.length > 0 && !mapLoading) {
+      // Reload only if not first render or if selected route changed
+      if (!isFirstRender) {
+        webViewRef.current.reload();
+      }
     }
-  }, [routes, selectedRoute, vehicleLocation]);
+  }, [routes, selectedRoute, vehicleLocation, mapLoading]);
 
   // Custom Dropdown Component
   const CustomDropdown = ({
@@ -1425,201 +1501,205 @@ function TransportVehicleSelection() {
                 />
               </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    Interested Quantity <Text style={styles.star}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={[styles.input, styles.inputDisabled]}
-                    value={String(
-                      formik.values.wastes[index]?.interestedQty || "",
-                    )}
-                    editable={false}
-                  />
-                </View>
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    Quantity to be Dispatched <Text style={styles.star}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={String(
-                      formik.values.wastes[index]?.dispatchQty || "",
-                    )}
-                    onChangeText={(text) =>
-                      formik.setFieldValue(`wastes.${index}.dispatchQty`, text)
-                    }
-                    keyboardType="numeric"
-                    maxLength={9}
-                    placeholder="Enter quantity"
-                  />
-                  {formik.errors.wastes?.[index]?.dispatchQty &&
-                    formik.touched.wastes?.[index]?.dispatchQty && (
-                      <Text style={styles.errorText}>
-                        {formik.errors.wastes[index].dispatchQty}
-                      </Text>
-                    )}
-                </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Interested Quantity <Text style={styles.star}>*</Text>
+                </Text>
+                <TextInput
+                  style={[styles.input, styles.inputDisabled]}
+                  value={String(
+                    formik.values.wastes[index]?.interestedQty || "",
+                  )}
+                  editable={false}
+                />
+              </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    Unit <Text style={styles.star}>*</Text>
-                  </Text>
-                  <CustomDropdown
-                    options={[
-                      { value: "", label: "Select Here" },
-                      { value: "1", label: "KL" },
-                      { value: "2", label: "Tonnes" },
-                    ]}
-                    selectedValue={formik.values.wastes[index]?.unit}
-                    onSelect={(value) =>
-                      formik.setFieldValue(`wastes.${index}.unit`, value)
-                    }
-                    placeholder="Select"
-                    error={
-                      formik.errors.wastes?.[index]?.unit &&
-                      formik.touched.wastes?.[index]?.unit
-                        ? formik.errors.wastes[index].unit
-                        : null
-                    }
-                  />
-                </View>
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    Description of Waste <Text style={styles.star}>*</Text>
-                  </Text>
-                  <CustomDropdown
-                    options={[
-                      { value: "", label: "Select Here" },
-                      { value: "1", label: "Explosive" },
-                      { value: "2", label: "Ignitable" },
-                      { value: "3", label: "Corrosive" },
-                      { value: "4", label: "Toxic" },
-                      { value: "5", label: "Odour Compounds" },
-                      { value: "6", label: "Flammable" },
-                    ]}
-                    selectedValue={
-                      formik.values.wastes[index]?.wasteDescription
-                    }
-                    onSelect={(value) =>
-                      formik.setFieldValue(
-                        `wastes.${index}.wasteDescription`,
-                        value,
-                      )
-                    }
-                    placeholder="Select"
-                    error={
-                      formik.errors.wastes?.[index]?.wasteDescription &&
-                      formik.touched.wastes?.[index]?.wasteDescription
-                        ? formik.errors.wastes[index].wasteDescription
-                        : null
-                    }
-                  />
-                </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Quantity to be Dispatched <Text style={styles.star}>*</Text>
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={String(
+                    formik.values.wastes[index]?.dispatchQty || "",
+                  )}
+                  onChangeText={(text) =>
+                    formik.setFieldValue(`wastes.${index}.dispatchQty`, text)
+                  }
+                  keyboardType="numeric"
+                  maxLength={9}
+                  placeholder="Enter quantity"
+                />
+                {formik.errors.wastes?.[index]?.dispatchQty &&
+                  formik.touched.wastes?.[index]?.dispatchQty && (
+                    <Text style={styles.errorText}>
+                      {formik.errors.wastes[index].dispatchQty}
+                    </Text>
+                  )}
+              </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    Consistance for waste <Text style={styles.star}>*</Text>
-                  </Text>
-                  <CustomDropdown
-                    options={[
-                      { value: "", label: "Select Here" },
-                      { value: "1", label: "Solid" },
-                      { value: "2", label: "Semi Solid" },
-                      { value: "3", label: "Sludge" },
-                      { value: "4", label: "Oily" },
-                      { value: "5", label: "Tarry" },
-                      { value: "6", label: "Slurry" },
-                      { value: "7", label: "Liquid" },
-                    ]}
-                    selectedValue={
-                      formik.values.wastes[index]?.wasteConsistency
-                    }
-                    onSelect={(value) =>
-                      formik.setFieldValue(
-                        `wastes.${index}.wasteConsistency`,
-                        value,
-                      )
-                    }
-                    placeholder="Select"
-                    error={
-                      formik.errors.wastes?.[index]?.wasteConsistency &&
-                      formik.touched.wastes?.[index]?.wasteConsistency
-                        ? formik.errors.wastes[index].wasteConsistency
-                        : null
-                    }
-                  />
-                </View>
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    PH <Text style={styles.star}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={String(formik.values.wastes[index]?.ph || "")}
-                    onChangeText={(text) =>
-                      formik.setFieldValue(`wastes.${index}.ph`, text)
-                    }
-                    keyboardType="numeric"
-                    placeholder="Enter PH"
-                  />
-                  {formik.errors.wastes?.[index]?.ph &&
-                    formik.touched.wastes?.[index]?.ph && (
-                      <Text style={styles.errorText}>
-                        {formik.errors.wastes[index].ph}
-                      </Text>
-                    )}
-                </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Unit <Text style={styles.star}>*</Text>
+                </Text>
+                <CustomDropdown
+                  options={[
+                    { value: "", label: "Select Here" },
+                    { value: "1", label: "KL" },
+                    { value: "2", label: "Tonnes" },
+                  ]}
+                  selectedValue={formik.values.wastes[index]?.unit}
+                  onSelect={(value) =>
+                    formik.setFieldValue(`wastes.${index}.unit`, value)
+                  }
+                  placeholder="Select"
+                  error={
+                    formik.errors.wastes?.[index]?.unit &&
+                    formik.touched.wastes?.[index]?.unit
+                      ? formik.errors.wastes[index].unit
+                      : null
+                  }
+                />
+              </View>
 
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    Calorific Value <Text style={styles.star}>*</Text>
-                  </Text>
-                  <TextInput
-                    style={styles.input}
-                    value={String(
-                      formik.values.wastes[index]?.calorificValue || "",
-                    )}
-                    onChangeText={(text) =>
-                      formik.setFieldValue(
-                        `wastes.${index}.calorificValue`,
-                        text,
-                      )
-                    }
-                    keyboardType="numeric"
-                    placeholder="Calorific Value"
-                  />
-                  {formik.errors.wastes?.[index]?.calorificValue &&
-                    formik.touched.wastes?.[index]?.calorificValue && (
-                      <Text style={styles.errorText}>
-                        {formik.errors.wastes[index].calorificValue}
-                      </Text>
-                    )}
-                </View>
-                <View style={styles.formGroup}>
-                  <Text style={styles.label}>
-                    Type of Package <Text style={styles.star}>*</Text>
-                  </Text>
-                  <CustomDropdown
-                    options={[
-                      { value: "", label: "Select Here" },
-                      { value: "1", label: "Container" },
-                      { value: "2", label: "Drum" },
-                      { value: "3", label: "Bags" },
-                    ]}
-                    selectedValue={formik.values.wastes[index]?.packageType}
-                    onSelect={(value) =>
-                      formik.setFieldValue(`wastes.${index}.packageType`, value)
-                    }
-                    placeholder="Select"
-                    error={
-                      formik.errors.wastes?.[index]?.packageType &&
-                      formik.touched.wastes?.[index]?.packageType
-                        ? formik.errors.wastes[index].packageType
-                        : null
-                    }
-                  />
-                </View>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Description of Waste <Text style={styles.star}>*</Text>
+                </Text>
+                <CustomDropdown
+                  options={[
+                    { value: "", label: "Select Here" },
+                    { value: "1", label: "Explosive" },
+                    { value: "2", label: "Ignitable" },
+                    { value: "3", label: "Corrosive" },
+                    { value: "4", label: "Toxic" },
+                    { value: "5", label: "Odour Compounds" },
+                    { value: "6", label: "Flammable" },
+                  ]}
+                  selectedValue={
+                    formik.values.wastes[index]?.wasteDescription
+                  }
+                  onSelect={(value) =>
+                    formik.setFieldValue(
+                      `wastes.${index}.wasteDescription`,
+                      value,
+                    )
+                  }
+                  placeholder="Select"
+                  error={
+                    formik.errors.wastes?.[index]?.wasteDescription &&
+                    formik.touched.wastes?.[index]?.wasteDescription
+                      ? formik.errors.wastes[index].wasteDescription
+                      : null
+                  }
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Consistance for waste <Text style={styles.star}>*</Text>
+                </Text>
+                <CustomDropdown
+                  options={[
+                    { value: "", label: "Select Here" },
+                    { value: "1", label: "Solid" },
+                    { value: "2", label: "Semi Solid" },
+                    { value: "3", label: "Sludge" },
+                    { value: "4", label: "Oily" },
+                    { value: "5", label: "Tarry" },
+                    { value: "6", label: "Slurry" },
+                    { value: "7", label: "Liquid" },
+                  ]}
+                  selectedValue={
+                    formik.values.wastes[index]?.wasteConsistency
+                  }
+                  onSelect={(value) =>
+                    formik.setFieldValue(
+                      `wastes.${index}.wasteConsistency`,
+                      value,
+                    )
+                  }
+                  placeholder="Select"
+                  error={
+                    formik.errors.wastes?.[index]?.wasteConsistency &&
+                    formik.touched.wastes?.[index]?.wasteConsistency
+                      ? formik.errors.wastes[index].wasteConsistency
+                      : null
+                  }
+                />
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  PH <Text style={styles.star}>*</Text>
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={String(formik.values.wastes[index]?.ph || "")}
+                  onChangeText={(text) =>
+                    formik.setFieldValue(`wastes.${index}.ph`, text)
+                  }
+                  keyboardType="numeric"
+                  placeholder="Enter PH"
+                />
+                {formik.errors.wastes?.[index]?.ph &&
+                  formik.touched.wastes?.[index]?.ph && (
+                    <Text style={styles.errorText}>
+                      {formik.errors.wastes[index].ph}
+                    </Text>
+                  )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Calorific Value <Text style={styles.star}>*</Text>
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  value={String(
+                    formik.values.wastes[index]?.calorificValue || "",
+                  )}
+                  onChangeText={(text) =>
+                    formik.setFieldValue(
+                      `wastes.${index}.calorificValue`,
+                      text,
+                    )
+                  }
+                  keyboardType="numeric"
+                  placeholder="Calorific Value"
+                />
+                {formik.errors.wastes?.[index]?.calorificValue &&
+                  formik.touched.wastes?.[index]?.calorificValue && (
+                    <Text style={styles.errorText}>
+                      {formik.errors.wastes[index].calorificValue}
+                    </Text>
+                  )}
+              </View>
+
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>
+                  Type of Package <Text style={styles.star}>*</Text>
+                </Text>
+                <CustomDropdown
+                  options={[
+                    { value: "", label: "Select Here" },
+                    { value: "1", label: "Container" },
+                    { value: "2", label: "Drum" },
+                    { value: "3", label: "Bags" },
+                  ]}
+                  selectedValue={formik.values.wastes[index]?.packageType}
+                  onSelect={(value) =>
+                    formik.setFieldValue(`wastes.${index}.packageType`, value)
+                  }
+                  placeholder="Select"
+                  error={
+                    formik.errors.wastes?.[index]?.packageType &&
+                    formik.touched.wastes?.[index]?.packageType
+                      ? formik.errors.wastes[index].packageType
+                      : null
+                  }
+                />
+              </View>
 
               <View style={styles.formGroup}>
                 <Text style={styles.label}>
@@ -2257,14 +2337,6 @@ const styles = StyleSheet.create({
   },
   formGroup: {
     marginBottom: 12,
-  },
-  row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  col6: {
-    width: "50%",
-    paddingHorizontal: 4,
   },
   label: {
     fontSize: 14,
