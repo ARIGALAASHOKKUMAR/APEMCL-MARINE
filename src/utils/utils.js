@@ -269,7 +269,9 @@ export const REDIRECTIONRECEIVERS = "api/user/receiver-industries?receiverWasteT
 export const POSTMANIFEST = "api/user/add-transport-vehicle-selection"
 export const RECEIVERREQUESTMANIFESTCLOSEADMIN = "api/user/requestManifestCloseToAdmin"
 export const TRANSPORTVEHICLESELECTIONDETAILS = "api/user/transport-vehicle-selection-details"
-
+export const FLOWMETERREADINGPOST = "api/user/effluent-receiver-action"
+export const EFFPIPELINEDISCHARGEDETAILS = "api/user/effluent-pipeline-discharge-details"
+export const EFFPIPELINEDISCHARGEDETAILSREC = "api/user/effluent-waste-generator-details"
 // Add this to your utils.js file
 export const MARINEDISCHARGEDRILLDOWN = "/api/user/marine-discharge-dashboard-drilldown";
 

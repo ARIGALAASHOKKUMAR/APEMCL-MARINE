@@ -32,8 +32,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { wasteTypes } from "../utils/CommonFunctions";
 
-// Waste types data
-
+const ITEMS_PER_PAGE = 10;
 
 const effluentData = [
   { sno: "1", effluentType: "LTDS", permittedQty: "", disposalOption: "" },
@@ -69,6 +68,7 @@ function ManagePermittedQuantity() {
   const [view, setView] = useState([]);
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [displayData, setDisplayData] = useState([]);
   const [processes, setProcesses] = useState([]);
   const [streams, setStreams] = useState([]);
   const [cetp, setCetp] = useState([]);
@@ -80,20 +80,9 @@ function ManagePermittedQuantity() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showReceiversModal, setShowReceiversModal] = useState(false);
-  const [dropdownVisible, setDropdownVisible] = useState({
-    industry: false,
-    wasteType: false,
-    disposal: false,
-    cetp1: false,
-    cetp2: false,
-    cetp3: false,
-    mode1: false,
-    mode2: false,
-    mode3: false,
-    process: false,
-    stream: false,
-    category: false,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const flatListRef = useRef(null);
   const dispatch = useDispatch();
 
   // Validation Schema for Top Form
@@ -120,7 +109,7 @@ function ManagePermittedQuantity() {
           receiverTypeId === "1" && disposalOption === "2",
         then: (s) => s.required("Required"),
         otherwise: (s) => s.notRequired(),
-      },
+      }
     ),
     modeOfConveyance1: Yup.string().when(["cetpMembershipId1"], {
       is: (cetpMembershipId1) => cetpMembershipId1 === "1",
@@ -145,7 +134,7 @@ function ManagePermittedQuantity() {
           effluentType: Yup.string(),
           permittedQty: Yup.string(),
           disposalOption: Yup.string(),
-        }),
+        })
       )
       .when("$receiverTypeId", {
         is: "1",
@@ -158,9 +147,9 @@ function ManagePermittedQuantity() {
               return rows.some(
                 (row) =>
                   row?.permittedQty?.toString().trim() &&
-                  row?.disposalOption?.toString().trim(),
+                  row?.disposalOption?.toString().trim()
               );
-            },
+            }
           ),
         otherwise: (schema) => schema,
       }),
@@ -216,7 +205,6 @@ function ManagePermittedQuantity() {
     },
     validationSchema: validationSchemaTop,
     onSubmit: (values) => {
-    //   console.log("Top form submitted:", values);
       setEditDisable(false);
       setWasteTypeValue(values.receiverTypeId);
       setShowSecondForm(true);
@@ -256,7 +244,6 @@ function ManagePermittedQuantity() {
     validationSchema: validationSchemaBottom,
     enableReinitialize: true,
     onSubmit: (values) => {
-    //   console.log("Bottom form submitted:", values);
       HandleSubmit(values);
     },
   });
@@ -267,7 +254,7 @@ function ManagePermittedQuantity() {
       formikBottom.setFieldValue("industryId", formikTop.values.industryId);
       formikBottom.setFieldValue(
         "receiverTypeId",
-        formikTop.values.receiverTypeId,
+        formikTop.values.receiverTypeId
       );
     }
   }, [formikTop.values.industryId, formikTop.values.receiverTypeId]);
@@ -276,7 +263,6 @@ function ManagePermittedQuantity() {
     try {
       setLoading(true);
 
-      // Prepare payload
       const payload = {
         industryId: values.industryId,
         receiverTypeId: values.receiverTypeId,
@@ -298,22 +284,18 @@ function ManagePermittedQuantity() {
           (row) =>
             row.permittedQty !== "" &&
             row.permittedQty !== null &&
-            row.permittedQty !== undefined,
+            row.permittedQty !== undefined
         ),
         effluentId: values.effluentId || "",
         wasteId: values.wasteId || "",
       };
 
-    //   console.log("Submitting payload:", JSON.stringify(payload, null, 2));
-
       const response = await commonAPICall(
         MANAGEPERMITTEDQUANTITY,
         payload,
         "post",
-        dispatch,
+        dispatch
       );
-
-    //   console.log("API Response:", response);
 
       if (response.status === 200 || response.status === 201) {
         Alert.alert("Success", "Data saved successfully");
@@ -360,7 +342,7 @@ function ManagePermittedQuantity() {
         STREAMS + processId,
         {},
         "get",
-        dispatch,
+        dispatch
       );
       if (response.status === 200) {
         setStreams(response.data.Steam || []);
@@ -403,44 +385,45 @@ function ManagePermittedQuantity() {
           formikTop.values.receiverTypeId,
         {},
         "get",
-        dispatch,
+        dispatch
       );
 
       if (response.status === 200) {
         const apiData = response.data.data || [];
         setData(apiData);
         setFilteredData(apiData);
+        updatePagination(apiData);
 
         if (formikTop.values.receiverTypeId === "1" && apiData.length > 0) {
           const d = apiData[0];
           if (d?.effluentDetails) {
             formikBottom.setFieldValue(
               "effluentDisposalOption",
-              d.disposal_option || "",
+              d.disposal_option || ""
             );
             formikBottom.setFieldValue(
               "cetpMembershipId1",
-              d.cetp_membership_id1 || "",
+              d.cetp_membership_id1 || ""
             );
             formikBottom.setFieldValue(
               "cetpMembershipId2",
-              d.cetp_membership_id2 || "",
+              d.cetp_membership_id2 || ""
             );
             formikBottom.setFieldValue(
               "cetpMembershipId3",
-              d.cetp_membership_id3 || "",
+              d.cetp_membership_id3 || ""
             );
             formikBottom.setFieldValue(
               "modeOfConveyance1",
-              d.mode_of_conveyance_1 || "",
+              d.mode_of_conveyance_1 || ""
             );
             formikBottom.setFieldValue(
               "modeOfConveyance2",
-              d.mode_of_conveyance_2 || "",
+              d.mode_of_conveyance_2 || ""
             );
             formikBottom.setFieldValue(
               "modeOfConveyance3",
-              d.mode_of_conveyance_3 || "",
+              d.mode_of_conveyance_3 || ""
             );
 
             const parsedEffluent = JSON.parse(d.effluentDetails);
@@ -449,7 +432,7 @@ function ManagePermittedQuantity() {
               const matched = parsedEffluent.find(
                 (x) =>
                   x.effluentType?.toLowerCase() ===
-                  row.effluentType?.toLowerCase(),
+                  row.effluentType?.toLowerCase()
               );
               return matched
                 ? {
@@ -471,6 +454,32 @@ function ManagePermittedQuantity() {
     }
   };
 
+  const updatePagination = (dataArray) => {
+    const total = Math.ceil(dataArray.length / ITEMS_PER_PAGE);
+    setTotalPages(total);
+    setCurrentPage(1);
+    const start = 0;
+    const end = ITEMS_PER_PAGE;
+    setDisplayData(dataArray.slice(start, end));
+  };
+
+  const scrollToTop = () => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+    }
+  };
+
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    setDisplayData(filteredData.slice(start, end));
+    requestAnimationFrame(() => {
+      scrollToTop();
+    });
+  };
+
   const handleDeleteEffluent = async (receiverType, recordId) => {
     Alert.alert(
       "Are you sure?",
@@ -489,7 +498,7 @@ function ManagePermittedQuantity() {
                   recordId,
                 {},
                 "POST",
-                dispatch,
+                dispatch
               );
               if (res.status === 200) {
                 Alert.alert("Success", "Record deleted successfully");
@@ -504,7 +513,7 @@ function ManagePermittedQuantity() {
           },
         },
       ],
-      { cancelable: false },
+      { cancelable: false }
     );
   };
 
@@ -513,34 +522,34 @@ function ManagePermittedQuantity() {
     formikBottom.setFieldValue("effluentDisposalOption", d.disposal_option);
     formikBottom.setFieldValue(
       "cetpMembershipId1",
-      d.cetp_membership_id1 || "",
+      d.cetp_membership_id1 || ""
     );
     formikBottom.setFieldValue(
       "cetpMembershipId2",
-      d.cetp_membership_id2 || "",
+      d.cetp_membership_id2 || ""
     );
     formikBottom.setFieldValue(
       "cetpMembershipId3",
-      d.cetp_membership_id3 || "",
+      d.cetp_membership_id3 || ""
     );
     formikBottom.setFieldValue(
       "modeOfConveyance1",
-      d.mode_of_conveyance_1 || "",
+      d.mode_of_conveyance_1 || ""
     );
     formikBottom.setFieldValue(
       "modeOfConveyance2",
-      d.mode_of_conveyance_2 || "",
+      d.mode_of_conveyance_2 || ""
     );
     formikBottom.setFieldValue(
       "modeOfConveyance3",
-      d.mode_of_conveyance_3 || "",
+      d.mode_of_conveyance_3 || ""
     );
     formikBottom.setFieldValue("effluentId", d.effluentid || "");
 
     const effList = JSON.parse(d.effluentDetails || "[]");
     const rows = effluentData.map((effluent, index) => {
       const existingRow = effList.find(
-        (item) => item.effluentType === effluent.effluentType,
+        (item) => item.effluentType === effluent.effluentType
       );
       return {
         sno: index + 1,
@@ -571,7 +580,7 @@ function ManagePermittedQuantity() {
       const receiverList = JSON.parse(d.receiver_info || "[]");
       formikBottom.setFieldValue(
         "receiverIds",
-        receiverList.map((item) => item.receiver_id),
+        receiverList.map((item) => item.receiver_id)
       );
     }
   };
@@ -594,64 +603,7 @@ function ManagePermittedQuantity() {
     formikTop.setFieldValue("receiverTypeId", value);
   };
 
-  const getTableHeaders = (rtype) => {
-    switch (rtype) {
-      case 1:
-        return [
-          "S.No",
-          "Industry Name",
-          "Waste Type",
-          "Waste Name",
-          "Disposal Option",
-          "Effluent Type",
-          "Permitted Qty",
-          "Disposal Option",
-          "Action",
-        ];
-      case 2:
-      case 3:
-      case 5:
-        return [
-          "S.No",
-          "Industry Name",
-          "Waste Type",
-          "Waste Name",
-          "Process",
-          "Stream",
-          "Permitted Qty",
-          "Disposal Option",
-          "Action",
-        ];
-      case 4:
-        return [
-          "S.No",
-          "Industry Name",
-          "Waste Type",
-          "Waste Name",
-          "Process",
-          "Stream",
-          "Permitted Qty",
-          "Disposal Option",
-          "Receivers",
-          "Action",
-        ];
-      case 6:
-        return [
-          "S.No",
-          "Industry Name",
-          "Waste Type",
-          "Waste Name",
-          "Category",
-          "Permitted Qty",
-          "Disposal Option",
-          "Action",
-        ];
-      default:
-        return [];
-    }
-  };
-
-  // Custom Dropdown Component with scroll fix
+  // Custom Dropdown Component
   const CustomDropdown = ({
     options,
     selectedValue,
@@ -667,7 +619,7 @@ function ManagePermittedQuantity() {
 
     const getLabel = () => {
       const selected = options.find(
-        (opt) => String(opt.value) === String(selectedValue),
+        (opt) => String(opt.value) === String(selectedValue)
       );
       return selected ? selected.label : placeholder || "Select";
     };
@@ -781,7 +733,7 @@ function ManagePermittedQuantity() {
           formikTop.setFieldValue("industryId", value);
           setShowSecondForm(false);
           const industry = view.find(
-            (item) => String(item.industryid) === value,
+            (item) => String(item.industryid) === value
           );
           setSelectedIndustry(industry);
         }}
@@ -844,14 +796,14 @@ function ManagePermittedQuantity() {
                         parseInt(
                           formikBottom.values[
                             `cetpMembershipId${num === 1 ? 2 : num === 2 ? 1 : 1}`
-                          ] || "0",
+                          ] || "0"
                         ) &&
                       c.cetpid !==
                         parseInt(
                           formikBottom.values[
                             `cetpMembershipId${num === 3 ? 1 : num === 1 ? 3 : 3}`
-                          ] || "0",
-                        ),
+                          ] || "0"
+                        )
                   )
                   .map((c) => ({
                     value: String(c.cetpid),
@@ -869,7 +821,7 @@ function ManagePermittedQuantity() {
                     onSelect={(value) =>
                       formikBottom.setFieldValue(
                         `cetpMembershipId${num}`,
-                        value,
+                        value
                       )
                     }
                     placeholder={`Select CETP Membership ${num}`}
@@ -889,7 +841,7 @@ function ManagePermittedQuantity() {
                         onSelect={(value) =>
                           formikBottom.setFieldValue(
                             `modeOfConveyance${num}`,
-                            value,
+                            value
                           )
                         }
                         placeholder="Select Mode"
@@ -932,7 +884,7 @@ function ManagePermittedQuantity() {
                   onChangeText={(text) =>
                     formikBottom.setFieldValue(
                       `effluentRows[${index}].permittedQty`,
-                      text,
+                      text
                     )
                   }
                   keyboardType="numeric"
@@ -947,7 +899,7 @@ function ManagePermittedQuantity() {
                   onChangeText={(text) =>
                     formikBottom.setFieldValue(
                       `effluentRows[${index}].disposalOption`,
-                      text,
+                      text
                     )
                   }
                   maxLength={40}
@@ -1176,10 +1128,6 @@ function ManagePermittedQuantity() {
         <TouchableOpacity
           style={[styles.submitButton, loading && { opacity: 0.6 }]}
           onPress={async () => {
-            // console.log("========== SUBMIT PRESSED ==========");
-            // console.log("Form values:", formikBottom.values);
-
-            // Mark all required fields as touched
             const touchedFields = {
               industryId: true,
               receiverTypeId: true,
@@ -1204,7 +1152,6 @@ function ManagePermittedQuantity() {
 
             const errors = await formikBottom.validateForm();
 
-
             if (Object.keys(errors).length > 0) {
               return;
             }
@@ -1227,549 +1174,611 @@ function ManagePermittedQuantity() {
     );
   };
 
-  const renderTable = () => {
-    const rtype = Number(formikTop.values.receiverTypeId || 0);
-    const headers = getTableHeaders(rtype);
+  // Render Pagination Controls
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
 
-    if (headers.length === 0) return null;
+    let pageNumbers = [];
+    if (currentPage - 1 >= 1) {
+      pageNumbers.push(currentPage - 1);
+    }
+    pageNumbers.push(currentPage);
+    if (currentPage + 1 <= totalPages) {
+      pageNumbers.push(currentPage + 1);
+    }
 
-    // ============================================================
-    // TABLE COLUMN WIDTHS
-    // ============================================================
-
-    const tableColumnWidths = {
-      1: {
-        sno: 55,
-        industry: 160,
-        wasteType: 130,
-        wasteName: 160,
-        disposal: 160,
-        effluentType: 140,
-        permittedQty: 110,
-        effluentDisposal: 160,
-        action: 90,
-      },
-
-      2: {
-        sno: 55,
-        industry: 160,
-        wasteType: 130,
-        wasteName: 160,
-        process: 150,
-        stream: 150,
-        permittedQty: 110,
-        disposal: 160,
-        action: 90,
-      },
-
-      3: {
-        sno: 55,
-        industry: 160,
-        wasteType: 130,
-        wasteName: 160,
-        process: 150,
-        stream: 150,
-        permittedQty: 110,
-        disposal: 160,
-        action: 90,
-      },
-
-      4: {
-        sno: 55,
-        industry: 160,
-        wasteType: 130,
-        wasteName: 160,
-        process: 150,
-        stream: 150,
-        permittedQty: 110,
-        disposal: 160,
-        receivers: 220,
-        action: 90,
-      },
-
-      5: {
-        sno: 55,
-        industry: 160,
-        wasteType: 130,
-        wasteName: 160,
-        process: 150,
-        stream: 150,
-        permittedQty: 110,
-        disposal: 160,
-        action: 90,
-      },
-
-      6: {
-        sno: 55,
-        industry: 160,
-        wasteType: 130,
-        category: 140,
-        wasteName: 160,
-        permittedQty: 110,
-        disposal: 160,
-        action: 90,
-      },
-    };
-
-    // ============================================================
-    // TABLE CELL
-    // ============================================================
-
-    const TableCell = ({
-      children,
-      width,
-      header = false,
-      numberOfLines = 1,
-      center = false,
-    }) => {
-      return (
-        <View
-          style={[
-            styles.actionCell,
-            {
-              width,
-              minWidth: width,
-              maxWidth: width,
-            },
-          ]}
-        >
-          <Text
-            numberOfLines={numberOfLines}
-            ellipsizeMode="tail"
-            style={[
-              styles.tableCell,
-              header && styles.tableHeaderText,
-              center && styles.tableCellTextCenter,
-            ]}
-          >
-            {children ?? "-"}
-          </Text>
-        </View>
-      );
-    };
-
-    // ============================================================
-    // ACTION CELL
-    // ============================================================
-
-    const ActionCell = ({ width, onEdit, onDelete }) => {
-      return (
-        <View
-          style={[
-            styles.actionCell,
-            {
-              width: width,
-              minWidth: width,
-              maxWidth: width,
-              flexGrow: 0,
-              flexShrink: 0,
-            },
-          ]}
-        >
-          <View style={styles.actionButtonsWrapper}>
-            <TouchableOpacity
-              onPress={onEdit}
-              style={styles.actionButton}
-              activeOpacity={0.7}
-            >
-              <Icon name="create-outline" size={19} color="#2d6386" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={onDelete}
-              style={styles.actionButton}
-              activeOpacity={0.7}
-            >
-              <Icon name="trash-outline" size={19} color="#f7331e" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      );
-    };
-
-    // ============================================================
-    // TABLE HEADER
-    // ============================================================
-
-    const renderTableHeader = () => {
-      const widths = tableColumnWidths[rtype];
-
-      let headers = [];
-
-      if (rtype === 1) {
-        headers = [
-          ["S.No", widths.sno],
-          ["Industry Name", widths.industry],
-          ["Waste Type", widths.wasteType],
-          ["Waste Name", widths.wasteName],
-          ["Disposal Option", widths.disposal],
-          ["Effluent Type", widths.effluentType],
-          ["Permitted Qty", widths.permittedQty],
-          ["Disposal Option", widths.effluentDisposal],
-          ["Action", widths.action],
-        ];
-      }
-
-      if ([2, 3, 5].includes(rtype)) {
-        headers = [
-          ["S.No", widths.sno],
-          ["Industry Name", widths.industry],
-          ["Waste Type", widths.wasteType],
-          ["Waste Name", widths.wasteName],
-          ["Process", widths.process],
-          ["Stream", widths.stream],
-          ["Permitted Qty", widths.permittedQty],
-          ["Disposal Option", widths.disposal],
-          ["Action", widths.action],
-        ];
-      }
-
-      if (rtype === 4) {
-        headers = [
-          ["S.No", widths.sno],
-          ["Industry Name", widths.industry],
-          ["Waste Type", widths.wasteType],
-          ["Waste Name", widths.wasteName],
-          ["Process", widths.process],
-          ["Stream", widths.stream],
-          ["Permitted Qty", widths.permittedQty],
-          ["Disposal Option", widths.disposal],
-          ["Receivers", widths.receivers],
-          ["Action", widths.action],
-        ];
-      }
-
-      if (rtype === 6) {
-        headers = [
-          ["S.No", widths.sno],
-          ["Industry Name", widths.industry],
-          ["Waste Type", widths.wasteType],
-          ["Category", widths.category],
-          ["Waste Name", widths.wasteName],
-          ["Permitted Qty", widths.permittedQty],
-          ["Disposal Option", widths.disposal],
-          ["Action", widths.action],
-        ];
-      }
-
-      return (
-        <View style={styles.tableHeaderRow}>
-          {headers.map(([title, width], index) => (
-            <TableCell
-              key={`${title}-${index}`}
-              width={width}
-              header
-              center={title === "S.No" || title === "Action"}
-            >
-              {title}
-            </TableCell>
-          ))}
-        </View>
-      );
-    };
-
-    // ============================================================
-    // TABLE ROW
-    // ============================================================
-
-    const renderTableRow = (d, index) => {
-      const widths = tableColumnWidths[rtype];
-
-      // ----------------------------------------------------------
-      // RTYPE 1 - EFFLUENT
-      // ----------------------------------------------------------
-
-      if (rtype === 1) {
-        let effluentList = [];
-
-        try {
-          effluentList = JSON.parse(d?.effluentDetails || "[]");
-
-          if (!Array.isArray(effluentList)) {
-            effluentList = [];
-          }
-        } catch (error) {
-          console.log("Error parsing effluentDetails:", error);
-
-          effluentList = [];
+    if (pageNumbers.length === 1) {
+      if (currentPage < totalPages) {
+        pageNumbers.push(currentPage + 1);
+        if (currentPage + 2 <= totalPages) {
+          pageNumbers.push(currentPage + 2);
         }
-
-        return effluentList.map((eff, i) => (
-          <View key={`${index}-${i}`} style={styles.tableRow}>
-            <TableCell width={widths.sno} center>
-              {index + 1}
-            </TableCell>
-
-            <TableCell width={widths.industry}>{d?.industry_name}</TableCell>
-
-            <TableCell width={widths.wasteType}>
-              {d?.receiver_type_name}
-            </TableCell>
-
-            <TableCell width={widths.wasteName}>{d?.waste_name}</TableCell>
-
-            <TableCell width={widths.disposal}>
-              {d?.disposal_optionname}
-            </TableCell>
-
-            <TableCell width={widths.effluentType}>
-              {eff?.effluentType}
-            </TableCell>
-
-            <TableCell width={widths.permittedQty} center>
-              {eff?.permittedQty}
-            </TableCell>
-
-            <TableCell width={widths.effluentDisposal}>
-              {eff?.disposalOption}
-            </TableCell>
-
-            <ActionCell
-              width={widths.action}
-              onEdit={() => handleEditEffluent(d, eff)}
-              onDelete={() =>
-                handleDeleteEffluent(
-                  formikTop.values.receiverTypeId,
-                  eff?.effluentDetailId,
-                )
-              }
-            />
-          </View>
-        ));
-      }
-
-      // ----------------------------------------------------------
-      // RTYPE 2, 3, 5
-      // ----------------------------------------------------------
-
-      if ([2, 3, 5].includes(rtype)) {
-        return (
-          <View key={index} style={styles.tableRow}>
-            <TableCell width={widths.sno} center>
-              {index + 1}
-            </TableCell>
-
-            <TableCell width={widths.industry}>{d?.industry_name}</TableCell>
-
-            <TableCell width={widths.wasteType}>
-              {d?.receiver_type_name}
-            </TableCell>
-
-            <TableCell width={widths.wasteName}>{d?.waste_name}</TableCell>
-
-            <TableCell width={widths.process}>{d?.processname}</TableCell>
-
-            <TableCell width={widths.stream}>{d?.steamname}</TableCell>
-
-            <TableCell width={widths.permittedQty} center>
-              {d?.permitted_qty}
-            </TableCell>
-
-            <TableCell width={widths.disposal}>{d?.disposal_option}</TableCell>
-
-            <ActionCell
-              width={widths.action}
-              onEdit={() => handleEdit(d)}
-              onDelete={() =>
-                handleDeleteEffluent(
-                  formikTop.values.receiverTypeId,
-                  d?.waste_id,
-                )
-              }
-            />
-          </View>
-        );
-      }
-
-      // ----------------------------------------------------------
-      // RTYPE 4 - RECEIVERS
-      // ----------------------------------------------------------
-
-      if (rtype === 4) {
-        let receiverList = [];
-
-        try {
-          receiverList = JSON.parse(d?.receiver_info || "[]");
-
-          if (!Array.isArray(receiverList)) {
-            receiverList = [];
-          }
-        } catch (error) {
-          console.log("Error parsing receiver_info:", error);
-
-          receiverList = [];
+      } else if (currentPage > 1) {
+        pageNumbers.unshift(currentPage - 1);
+        if (currentPage - 2 >= 1) {
+          pageNumbers.unshift(currentPage - 2);
         }
-
-        const receiverNames =
-          receiverList.length > 0
-            ? receiverList
-                .map((r) => r?.receiver_industry_name || "-")
-                .join("\n")
-            : "-";
-
-        return (
-          <View key={index} style={[styles.tableRow, styles.receiverTableRow]}>
-            <TableCell width={widths.sno} center>
-              {index + 1}
-            </TableCell>
-
-            <TableCell width={widths.industry}>{d?.industry_name}</TableCell>
-
-            <TableCell width={widths.wasteType}>
-              {d?.receiver_type_name}
-            </TableCell>
-
-            <TableCell width={widths.wasteName}>{d?.waste_name}</TableCell>
-
-            <TableCell width={widths.process}>{d?.processname}</TableCell>
-
-            <TableCell width={widths.stream}>{d?.steamname}</TableCell>
-
-            <TableCell width={widths.permittedQty} center>
-              {d?.permitted_qty}
-            </TableCell>
-
-            <TableCell width={widths.disposal}>{d?.disposal_option}</TableCell>
-
-            <TableCell width={widths.receivers} numberOfLines={10}>
-              {receiverNames}
-            </TableCell>
-
-            <ActionCell
-              width={widths.action}
-              onEdit={() => handleEdit(d)}
-              onDelete={() =>
-                handleDeleteEffluent(
-                  formikTop.values.receiverTypeId,
-                  d?.waste_id,
-                )
-              }
-            />
-          </View>
-        );
       }
+    }
 
-      // ----------------------------------------------------------
-      // RTYPE 6 - CATEGORY
-      // ----------------------------------------------------------
-
-      if (rtype === 6) {
-        const categoryMap = {
-          1: "Fly Ash",
-          2: "Reuse",
-          3: "Others",
-        };
-
-        return (
-          <View key={index} style={styles.tableRow}>
-            <TableCell width={widths.sno} center>
-              {index + 1}
-            </TableCell>
-
-            <TableCell width={widths.industry}>{d?.industry_name}</TableCell>
-
-            <TableCell width={widths.wasteType}>
-              {d?.receiver_type_name}
-            </TableCell>
-
-            <TableCell width={widths.category}>
-              {categoryMap[d?.category_id] || "-"}
-            </TableCell>
-
-            <TableCell width={widths.wasteName}>{d?.waste_name}</TableCell>
-
-            <TableCell width={widths.permittedQty} center>
-              {d?.permitted_qty}
-            </TableCell>
-
-            <TableCell width={widths.disposal}>{d?.disposal_option}</TableCell>
-
-            <ActionCell
-              width={widths.action}
-              onEdit={() => handleEditCategory(d)}
-              onDelete={() =>
-                handleDeleteEffluent(
-                  formikTop.values.receiverTypeId,
-                  d?.waste_id,
-                )
-              }
-            />
-          </View>
-        );
+    if (pageNumbers.length === 2) {
+      if (pageNumbers[pageNumbers.length - 1] < totalPages) {
+        pageNumbers.push(pageNumbers[pageNumbers.length - 1] + 1);
+      } else if (pageNumbers[0] > 1) {
+        pageNumbers.unshift(pageNumbers[0] - 1);
       }
-
-      return null;
-    };
-
-    // ============================================================
-    // TABLE RENDER
-    // ============================================================
-
-    const renderTable = () => {
-      if (!filteredData || filteredData.length === 0) {
-        return (
-          <View style={styles.noDataContainer}>
-            <Text style={styles.noDataText}>No data available</Text>
-          </View>
-        );
-      }
-
-      return (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={true}
-          nestedScrollEnabled={true}
-          directionalLockEnabled={true}
-        >
-          <View>
-            {/* HEADER */}
-            {renderTableHeader()}
-
-            {/* BODY */}
-            {filteredData.map((item, index) => renderTableRow(item, index))}
-          </View>
-        </ScrollView>
-      );
-    };
+    }
 
     return (
-      <View style={styles.tableContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View>
-            <View style={styles.tableHeader}>
-              {headers.map((h, idx) => (
-                <Text
-                  key={idx}
-                  style={[
-                    styles.tableCell,
-                    styles.tableHeaderText,
-                    {
-                      flex:
-                        idx === 0
-                          ? 0.5
-                          : idx === headers.length - 1
-                            ? 0.6
-                            : 0.8,
-                      minWidth: idx === 0 ? 40 : 80,
-                    },
-                  ]}
-                >
-                  {h}
-                </Text>
-              ))}
-            </View>
-            {filteredData.length === 0 ? (
-              <View style={styles.noDataContainer}>
-                <Text style={styles.noDataText}>No Data Found</Text>
-              </View>
-            ) : (
-              filteredData.map((d, index) => renderTableRow(d, index))
-            )}
-          </View>
-        </ScrollView>
+      <View style={styles.paginationWrapper}>
+        <View style={styles.paginationContainer}>
+          <TouchableOpacity
+            style={[
+              styles.paginationButton,
+              currentPage === 1 && styles.paginationDisabled,
+            ]}
+            onPress={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <Icon
+              name="chevron-back"
+              size={16}
+              color={currentPage === 1 ? "#ccc" : "#2e7d32"}
+            />
+            <Text
+              style={[
+                styles.paginationText,
+                currentPage === 1 && styles.paginationTextDisabled,
+              ]}
+            >
+              Prev
+            </Text>
+          </TouchableOpacity>
+
+          {pageNumbers[0] > 1 && (
+            <>
+              <TouchableOpacity
+                style={styles.paginationNumber}
+                onPress={() => goToPage(1)}
+              >
+                <Text style={styles.paginationNumberText}>1</Text>
+              </TouchableOpacity>
+              {pageNumbers[0] > 2 && (
+                <Text style={styles.paginationDots}>...</Text>
+              )}
+            </>
+          )}
+
+          {pageNumbers.map((page) => (
+            <TouchableOpacity
+              key={page}
+              style={[
+                styles.paginationNumber,
+                currentPage === page && styles.paginationNumberActive,
+              ]}
+              onPress={() => goToPage(page)}
+            >
+              <Text
+                style={[
+                  styles.paginationNumberText,
+                  currentPage === page && styles.paginationNumberTextActive,
+                ]}
+              >
+                {page}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+          {pageNumbers[pageNumbers.length - 1] < totalPages && (
+            <>
+              {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                <Text style={styles.paginationDots}>...</Text>
+              )}
+              <TouchableOpacity
+                style={styles.paginationNumber}
+                onPress={() => goToPage(totalPages)}
+              >
+                <Text style={styles.paginationNumberText}>{totalPages}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          <TouchableOpacity
+            style={[
+              styles.paginationButton,
+              currentPage === totalPages && styles.paginationDisabled,
+            ]}
+            onPress={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <Text
+              style={[
+                styles.paginationText,
+                currentPage === totalPages && styles.paginationTextDisabled,
+              ]}
+            >
+              Next
+            </Text>
+            <Icon
+              name="chevron-forward"
+              size={16}
+              color={currentPage === totalPages ? "#ccc" : "#2e7d32"}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
+
+  // Render Card Item for Submitted Details
+  const renderCardItem = ({ item, index }) => {
+    const rtype = Number(formikTop.values.receiverTypeId || 0);
+    const actualIndex = (currentPage - 1) * ITEMS_PER_PAGE + index + 1;
+
+    // Effluent Type (1)
+    if (rtype === 1) {
+      let effluentList = [];
+      try {
+        effluentList = JSON.parse(item?.effluentDetails || "[]");
+        if (!Array.isArray(effluentList)) {
+          effluentList = [];
+        }
+      } catch (error) {
+        effluentList = [];
+      }
+
+      return effluentList.map((eff, i) => (
+        <View key={`${index}-${i}`} style={styles.resultCard}>
+          <View style={styles.resultCardHeader}>
+            <View style={styles.resultCardNumber}>
+              <Text style={styles.resultCardNumberText}>{actualIndex}</Text>
+            </View>
+            <Text style={styles.resultCardTitle}>Effluent Waste</Text>
+          </View>
+
+          <View style={styles.resultCardBody}>
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Industry Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.industry_name || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Type</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.receiver_type_name || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.waste_name || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Disposal Option</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.disposal_optionname || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Effluent Type</Text>
+                <Text style={styles.resultCardValue}>
+                  {eff?.effluentType || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Permitted Qty</Text>
+                <Text style={styles.resultCardValue}>
+                  {eff?.permittedQty || "0"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol12}>
+                <Text style={styles.resultCardLabel}>Disposal Option</Text>
+                <Text style={styles.resultCardValue}>
+                  {eff?.disposalOption || "-"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.resultCardFooter}>
+            <TouchableOpacity
+              style={styles.resultActionButton}
+              onPress={() => handleEditEffluent(item, eff)}
+            >
+              <Icon name="create-outline" size={16} color="#2d6386" />
+              <Text style={styles.resultActionText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.resultActionButton, styles.resultDeleteButton]}
+              onPress={() =>
+                handleDeleteEffluent(
+                  formikTop.values.receiverTypeId,
+                  eff?.effluentDetailId
+                )
+              }
+            >
+              <Icon name="trash-outline" size={16} color="#f7331e" />
+              <Text style={[styles.resultActionText, styles.resultDeleteText]}>
+                Delete
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ));
+    }
+
+    // Types 2, 3, 5
+    if ([2, 3, 5].includes(rtype)) {
+      return (
+        <View style={styles.resultCard}>
+          <View style={styles.resultCardHeader}>
+            <View style={styles.resultCardNumber}>
+              <Text style={styles.resultCardNumberText}>{actualIndex}</Text>
+            </View>
+            <Text style={styles.resultCardTitle}>Waste Details</Text>
+          </View>
+
+          <View style={styles.resultCardBody}>
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Industry Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.industry_name || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Type</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.receiver_type_name || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.waste_name || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Process</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.processname || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Stream</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.steamname || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Permitted Qty</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.permitted_qty || "0"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol12}>
+                <Text style={styles.resultCardLabel}>Disposal Option</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.disposal_option || "-"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.resultCardFooter}>
+            <TouchableOpacity
+              style={styles.resultActionButton}
+              onPress={() => handleEdit(item)}
+            >
+              <Icon name="create-outline" size={16} color="#2d6386" />
+              <Text style={styles.resultActionText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.resultActionButton, styles.resultDeleteButton]}
+              onPress={() =>
+                handleDeleteEffluent(
+                  formikTop.values.receiverTypeId,
+                  item?.waste_id
+                )
+              }
+            >
+              <Icon name="trash-outline" size={16} color="#f7331e" />
+              <Text style={[styles.resultActionText, styles.resultDeleteText]}>
+                Delete
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    // Type 4 - Receivers
+    if (rtype === 4) {
+      let receiverList = [];
+      try {
+        receiverList = JSON.parse(item?.receiver_info || "[]");
+        if (!Array.isArray(receiverList)) {
+          receiverList = [];
+        }
+      } catch (error) {
+        receiverList = [];
+      }
+
+      const receiverNames =
+        receiverList.length > 0
+          ? receiverList
+              .map((r) => r?.receiver_industry_name || "-")
+              .join("\n")
+          : "-";
+
+      return (
+        <View style={styles.resultCard}>
+          <View style={styles.resultCardHeader}>
+            <View style={styles.resultCardNumber}>
+              <Text style={styles.resultCardNumberText}>{actualIndex}</Text>
+            </View>
+            <Text style={styles.resultCardTitle}>Waste Details</Text>
+          </View>
+
+          <View style={styles.resultCardBody}>
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Industry Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.industry_name || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Type</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.receiver_type_name || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.waste_name || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Process</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.processname || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Stream</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.steamname || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Permitted Qty</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.permitted_qty || "0"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Disposal Option</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.disposal_option || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Receivers</Text>
+                <Text style={styles.resultCardValue} numberOfLines={3}>
+                  {receiverNames}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.resultCardFooter}>
+            <TouchableOpacity
+              style={styles.resultActionButton}
+              onPress={() => handleEdit(item)}
+            >
+              <Icon name="create-outline" size={16} color="#2d6386" />
+              <Text style={styles.resultActionText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.resultActionButton, styles.resultDeleteButton]}
+              onPress={() =>
+                handleDeleteEffluent(
+                  formikTop.values.receiverTypeId,
+                  item?.waste_id
+                )
+              }
+            >
+              <Icon name="trash-outline" size={16} color="#f7331e" />
+              <Text style={[styles.resultActionText, styles.resultDeleteText]}>
+                Delete
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    // Type 6 - Category
+    if (rtype === 6) {
+      const categoryMap = {
+        1: "Fly Ash",
+        2: "Reuse",
+        3: "Others",
+      };
+
+      return (
+        <View style={styles.resultCard}>
+          <View style={styles.resultCardHeader}>
+            <View style={styles.resultCardNumber}>
+              <Text style={styles.resultCardNumberText}>{actualIndex}</Text>
+            </View>
+            <Text style={styles.resultCardTitle}>Waste Details</Text>
+          </View>
+
+          <View style={styles.resultCardBody}>
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Industry Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.industry_name || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Type</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.receiver_type_name || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Category</Text>
+                <Text style={styles.resultCardValue}>
+                  {categoryMap[item?.category_id] || "-"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Waste Name</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.waste_name || "-"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.resultCardRow}>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Permitted Qty</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.permitted_qty || "0"}
+                </Text>
+              </View>
+              <View style={styles.resultCardCol6}>
+                <Text style={styles.resultCardLabel}>Disposal Option</Text>
+                <Text style={styles.resultCardValue}>
+                  {item?.disposal_option || "-"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.resultCardFooter}>
+            <TouchableOpacity
+              style={styles.resultActionButton}
+              onPress={() => handleEditCategory(item)}
+            >
+              <Icon name="create-outline" size={16} color="#2d6386" />
+              <Text style={styles.resultActionText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.resultActionButton, styles.resultDeleteButton]}
+              onPress={() =>
+                handleDeleteEffluent(
+                  formikTop.values.receiverTypeId,
+                  item?.waste_id
+                )
+              }
+            >
+              <Icon name="trash-outline" size={16} color="#f7331e" />
+              <Text style={[styles.resultActionText, styles.resultDeleteText]}>
+                Delete
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
+  // List Header Component for Result Cards
+  const ResultListHeader = () => (
+    <View style={styles.resultSearchContainer}>
+      <View style={styles.searchWrapper}>
+        <Icon name="search" size={18} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search..."
+          value={searchTerm}
+          onChangeText={(text) => {
+            setSearchTerm(text);
+            const filtered = data.filter((item) =>
+              Object.values(item).some(
+                (value) =>
+                  value && String(value).toLowerCase().includes(text.toLowerCase())
+              )
+            );
+            setFilteredData(filtered);
+            updatePagination(filtered);
+          }}
+        />
+        {searchTerm.length > 0 && (
+          <TouchableOpacity
+            onPress={() => {
+              setSearchTerm("");
+              setFilteredData(data);
+              updatePagination(data);
+            }}
+          >
+            <Icon name="close-circle" size={18} color="#999" />
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+
+  // List Footer Component for Result Cards
+  const ResultListFooter = () => (
+    <>
+      {renderPagination()}
+      <View style={styles.pageInfoContainer}>
+        <Text style={styles.pageInfoText}>
+          Page {currentPage} of {totalPages} ({filteredData.length} records)
+        </Text>
+      </View>
+    </>
+  );
+
+  // Empty List Component
+  const ResultListEmpty = () => (
+    <View style={styles.noDataContainer}>
+      <Icon name="warning-outline" size={40} color="#856404" />
+      <Text style={styles.noDataText}>No Data Found</Text>
+    </View>
+  );
 
   // Receivers Modal
   const renderReceiversModal = () => {
@@ -1806,7 +1815,7 @@ function ManagePermittedQuantity() {
               data={receivers.filter((r) =>
                 r.industry_name
                   .toLowerCase()
-                  .includes(searchTerm.toLowerCase()),
+                  .includes(searchTerm.toLowerCase())
               )}
               keyExtractor={(item) => String(item.industryid)}
               renderItem={({ item }) => (
@@ -1814,7 +1823,7 @@ function ManagePermittedQuantity() {
                   style={[
                     styles.modalItem,
                     formikBottom.values.receiverIds?.includes(
-                      item.industryid,
+                      item.industryid
                     ) && styles.modalItemSelected,
                   ]}
                   onPress={() => {
@@ -1822,7 +1831,7 @@ function ManagePermittedQuantity() {
                     if (currentIds.includes(item.industryid)) {
                       formikBottom.setFieldValue(
                         "receiverIds",
-                        currentIds.filter((id) => id !== item.industryid),
+                        currentIds.filter((id) => id !== item.industryid)
                       );
                     } else {
                       formikBottom.setFieldValue("receiverIds", [
@@ -1835,7 +1844,7 @@ function ManagePermittedQuantity() {
                   <View style={styles.modalItemContent}>
                     <View style={styles.modalCheckbox}>
                       {formikBottom.values.receiverIds?.includes(
-                        item.industryid,
+                        item.industryid
                       ) && (
                         <Icon
                           name="checkmark-circle"
@@ -1844,14 +1853,14 @@ function ManagePermittedQuantity() {
                         />
                       )}
                       {!formikBottom.values.receiverIds?.includes(
-                        item.industryid,
+                        item.industryid
                       ) && <View style={styles.modalCheckboxEmpty} />}
                     </View>
                     <Text
                       style={[
                         styles.modalItemText,
                         formikBottom.values.receiverIds?.includes(
-                          item.industryid,
+                          item.industryid
                         ) && styles.modalItemTextSelected,
                       ]}
                     >
@@ -1926,7 +1935,6 @@ function ManagePermittedQuantity() {
                   <TouchableOpacity
                     style={styles.goButton}
                     onPress={() => {
-                    //   console.log("GO button pressed");
                       formikTop.handleSubmit();
                     }}
                   >
@@ -1978,48 +1986,35 @@ function ManagePermittedQuantity() {
                 </View>
               )}
 
-              {/* Table */}
+              {/* Result Cards */}
               {showSecondForm && formikTop.values.receiverTypeId !== "1" && (
-                <View style={styles.tableSection}>
-                  <View style={styles.searchContainer}>
-                    <View style={styles.searchWrapper}>
-                      <Icon
-                        name="search"
-                        size={20}
-                        color="#666"
-                        style={styles.searchIcon}
-                      />
-                      <TextInput
-                        style={styles.searchInput}
-                        placeholder="Search..."
-                        value={searchTerm}
-                        onChangeText={(text) => {
-                          setSearchTerm(text);
-                          const filtered = data.filter((item) =>
-                            Object.values(item).some(
-                              (value) =>
-                                value &&
-                                String(value)
-                                  .toLowerCase()
-                                  .includes(text.toLowerCase()),
-                            ),
-                          );
-                          setFilteredData(filtered);
-                        }}
-                      />
-                      {searchTerm.length > 0 && (
-                        <TouchableOpacity
-                          onPress={() => {
-                            setSearchTerm("");
-                            setFilteredData(data);
-                          }}
-                        >
-                          <Icon name="close-circle" size={20} color="#999" />
-                        </TouchableOpacity>
-                      )}
+                <View style={styles.resultSection}>
+                  {loading ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="large" color="#2e7d32" />
+                      <Text style={styles.loadingText}>Loading...</Text>
                     </View>
-                  </View>
-                  {renderTable()}
+                  ) : filteredData.length > 0 ? (
+                    <FlatList
+                      ref={flatListRef}
+                      data={displayData}
+                      renderItem={renderCardItem}
+                      keyExtractor={(item, index) => 
+                        (item.waste_id || item.effluentid || "") + index.toString()
+                      }
+                      contentContainerStyle={styles.resultListContainer}
+                      showsVerticalScrollIndicator={false}
+                      ListHeaderComponent={ResultListHeader}
+                      ListFooterComponent={ResultListFooter}
+                      ListEmptyComponent={ResultListEmpty}
+                      initialNumToRender={10}
+                      maxToRenderPerBatch={10}
+                      windowSize={5}
+                      keyboardShouldPersistTaps="handled"
+                    />
+                  ) : (
+                    <ResultListEmpty />
+                  )}
                 </View>
               )}
             </View>
@@ -2188,11 +2183,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
     color: "#333",
   },
-  tableHeaderText: {
-    fontWeight: "600",
-    color: "#333",
-    fontSize: 11,
-  },
   tableInput: {
     borderWidth: 1,
     borderColor: "#ced4da",
@@ -2207,13 +2197,221 @@ const styles = StyleSheet.create({
     padding: 8,
     textAlign: "center",
   },
-  noDataContainer: {
-    padding: 20,
+  // Result Cards Styles
+  resultSection: {
+    marginTop: 16,
+  },
+  resultListContainer: {
+    paddingBottom: 10,
+  },
+  resultCard: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#e8ecf1",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    overflow: "hidden",
+  },
+  resultCardHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#f8fafc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e8ecf1",
+  },
+  resultCardNumber: {
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginRight: 10,
+  },
+  resultCardNumberText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  resultCardTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1e3a5f",
+    flex: 1,
+  },
+  resultCardBody: {
+    padding: 12,
+  },
+  resultCardRow: {
+    flexDirection: "row",
+    marginBottom: 6,
+  },
+  resultCardCol6: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  resultCardCol12: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  resultCardLabel: {
+    fontSize: 10,
+    color: "#888",
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  resultCardValue: {
+    fontSize: 13,
+    color: "#333",
+    fontWeight: "500",
+  },
+  resultCardFooter: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e8ecf1",
+    backgroundColor: "#fafbfc",
+    gap: 8,
+  },
+  resultActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: "#f0f0f0",
+  },
+  resultDeleteButton: {
+    backgroundColor: "#fde8e8",
+  },
+  resultActionText: {
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "500",
+    marginLeft: 4,
+  },
+  resultDeleteText: {
+    color: "#dc3545",
+  },
+  resultSearchContainer: {
+    marginBottom: 12,
+  },
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ced4da",
+    borderRadius: 6,
+    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    height: 40,
+  },
+  searchIcon: {
+    marginRight: 6,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 6,
+    fontSize: 13,
+    color: "#333",
+  },
+  // Pagination
+  paginationWrapper: {
+    borderTopWidth: 1,
+    borderTopColor: "#e8ecf1",
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "nowrap",
+    paddingHorizontal: 4,
+  },
+  paginationButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: "#f5f7fa",
+    marginHorizontal: 2,
+  },
+  paginationDisabled: {
+    opacity: 0.5,
+  },
+  paginationText: {
+    fontSize: 11,
+    color: "#2e7d32",
+    fontWeight: "500",
+  },
+  paginationTextDisabled: {
+    color: "#ccc",
+  },
+  paginationNumber: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginHorizontal: 2,
+    minWidth: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  paginationNumberActive: {
+    backgroundColor: "#2e7d32",
+  },
+  paginationNumberText: {
+    fontSize: 12,
+    color: "#333",
+    fontWeight: "500",
+  },
+  paginationNumberTextActive: {
+    color: "#fff",
+  },
+  paginationDots: {
+    fontSize: 12,
+    color: "#666",
+    paddingHorizontal: 2,
+  },
+  pageInfoContainer: {
+    alignItems: "center",
+    paddingVertical: 4,
+    paddingBottom: 8,
+  },
+  pageInfoText: {
+    fontSize: 11,
+    color: "#888",
+  },
+  // No Data
+  noDataContainer: {
+    padding: 30,
+    alignItems: "center",
+    backgroundColor: "#fff3cd",
+    borderRadius: 6,
+    marginTop: 6,
   },
   noDataText: {
-    color: "#dc3545",
-    fontSize: 14,
+    color: "#856404",
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  loadingContainer: {
+    padding: 30,
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 8,
+    color: "#666",
+    fontSize: 13,
   },
   submitButton: {
     backgroundColor: "#2e7d32",
@@ -2226,30 +2424,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  tableSection: {
-    marginTop: 16,
-  },
-  searchContainer: {
-    marginBottom: 12,
-  },
-  searchWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ced4da",
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#333",
   },
   // Dropdown Styles
   dropdownContainer: {
@@ -2446,52 +2620,6 @@ const styles = StyleSheet.create({
   },
   selectedText: {
     color: "#333",
-  },
-  actionCell: {
-    width: 90,
-    minWidth: 90,
-    maxWidth: 90,
-
-    padding: 0,
-    margin: 0,
-
-    flexGrow: 0,
-    flexShrink: 0,
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    borderRightWidth: 1,
-    borderRightColor: "#e0e0e0",
-
-    backgroundColor: "#fff",
-  },
-
-  actionButtonsWrapper: {
-    width: "100%",
-
-    flexDirection: "row",
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    padding: 0,
-    margin: 0,
-
-    gap: 8,
-  },
-
-  actionButton: {
-    width: 32,
-    height: 32,
-
-    padding: 0,
-    margin: 0,
-
-    justifyContent: "center",
-    alignItems: "center",
-
-    borderRadius: 6,
   },
 });
 

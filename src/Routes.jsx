@@ -35,6 +35,8 @@ import TransportersList from "./screens/TransportersList";
 import RegistrationPayment from "./screens/RegistrationPayment";
 import ManifestConfirmation from "./screens/ManifestConfirmation";
 import TransportAcknowledgement from "./screens/TransportAcknowledgement";
+import ManifestList from "./screens/ManifestList";
+import EffluentPipelineDischarge from "./screens/EffluentPipelineDischarge";
 // import TransportRejected from "./screens/TransportRejected";
 // import WebViewScreen from "./screens/WebViewScreen";
 // import PaymentScreen from "./screens/PaymentScreen";
@@ -393,8 +395,8 @@ export default function Routes() {
                       currentScreenName="PendingList"
                       scrollEnabled={false}
                     >
-                      <TransportAcknowledgement 
-                        {...props} 
+                      <TransportAcknowledgement
+                        {...props}
                         screenType="PendingList"
                         path="/PendingList"
                       />
@@ -412,8 +414,8 @@ export default function Routes() {
                       currentScreenName="AcceptedList"
                       scrollEnabled={false}
                     >
-                      <TransportAcknowledgement 
-                        {...props} 
+                      <TransportAcknowledgement
+                        {...props}
                         screenType="AcceptedList"
                         path="/AcceptedList"
                       />
@@ -431,8 +433,8 @@ export default function Routes() {
                       currentScreenName="RejectedList"
                       scrollEnabled={false}
                     >
-                      <TransportAcknowledgement 
-                        {...props} 
+                      <TransportAcknowledgement
+                        {...props}
                         screenType="RejectedList"
                         path="/RejectedList"
                       />
@@ -450,8 +452,8 @@ export default function Routes() {
                       currentScreenName="ManifestList"
                       scrollEnabled={false}
                     >
-                      <TransportAcknowledgement 
-                        {...props} 
+                      <TransportAcknowledgement
+                        {...props}
                         screenType="ManifestList"
                         path="/ManifestList"
                       />
@@ -491,19 +493,7 @@ export default function Routes() {
               </Stack.Screen>
 
               {/* Effluent Pipeline Discharge */}
-              <Stack.Screen name="EffluentPipelineDischarge">
-                {(props) => (
-                  <SessionChecking navigation={props.navigation}>
-                    <SiteLayout
-                      navigation={props.navigation}
-                      currentScreenName="EffluentPipelineDischarge"
-                      scrollEnabled={false}
-                    >
-                      <EffluentPipelineDischarge {...props} />
-                    </SiteLayout>
-                  </SessionChecking>
-                )}
-              </Stack.Screen>
+            
 
               {/* List Marine Discharges */}
               <Stack.Screen name="ListMarineDischarges">
@@ -519,7 +509,32 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
-
+              <Stack.Screen name="ManifestListRec">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="ManifestListRec"
+                      scrollEnabled={false}
+                    >
+                      <ManifestList {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
+              <Stack.Screen name="EffluentPipelineDischarge">
+                {(props) => (
+                  <SessionChecking navigation={props.navigation}>
+                    <SiteLayout
+                      navigation={props.navigation}
+                      currentScreenName="EffluentPipelineDischarge"
+                      scrollEnabled={false}
+                    >
+                      <EffluentPipelineDischarge {...props} />
+                    </SiteLayout>
+                  </SessionChecking>
+                )}
+              </Stack.Screen>
             </Stack.Navigator>
           </NavigationContainer>
         </ToastProvider>

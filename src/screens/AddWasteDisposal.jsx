@@ -1772,7 +1772,7 @@ const styles = StyleSheet.create({
     padding: 16,
     width: "90%",
     maxHeight: "100%",
-    minHeight: 600,
+    minHeight: 400,
   },
   dropdownModalHeader: {
     flexDirection: "row",

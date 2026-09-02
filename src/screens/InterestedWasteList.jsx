@@ -1,3 +1,4 @@
+// screens/InterestedWasteList.js
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -28,8 +29,6 @@ import {
   WASTEDISPOSALINTERESTDETAILS,
 } from "../utils/utils";
 import { wasteTypes } from "../utils/CommonFunctions";
-
-
 
 function InterestedWasteList() {
   const navigation = useNavigation();
@@ -135,7 +134,6 @@ function InterestedWasteList() {
               );
               if (response.status === 200) {
                 Alert.alert("Success", "Approved successfully!");
-                // Navigate back or refresh
                 navigation.goBack();
               }
             } catch (error) {
@@ -304,6 +302,7 @@ function InterestedWasteList() {
     );
   };
 
+  // Render Receivers List with Cards
   const renderReceiversList = () => {
     if (!selectedData) return null;
 
@@ -314,7 +313,7 @@ function InterestedWasteList() {
 
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.card}>
+        <View style={styles.cardContainer}>
           <View style={styles.cardHeader}>
             <TouchableOpacity
               style={styles.backButton}
@@ -389,70 +388,81 @@ function InterestedWasteList() {
                   </View>
                 )}
 
-                {/* Receivers Table */}
+                {/* Receivers List - Card Format */}
                 <View style={styles.receiversSection}>
                   <View style={styles.sectionHeader}>
                     <Icon name="people-outline" size={20} color="#2e7d32" />
                     <Text style={styles.sectionTitle}>INTERESTED RECEIVERS LIST</Text>
                   </View>
 
-                  <View style={styles.tableContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <View>
-                        <View style={styles.tableHeader}>
-                          <Text style={[styles.tableCell, { width: 50 }]}>S.No</Text>
-                          <Text style={[styles.tableCell, { width: 150 }]}>Industry Name</Text>
-                          <Text style={[styles.tableCell, { width: 120 }]}>District</Text>
-                          <Text style={[styles.tableCell, { width: 150 }]}>Contact Info</Text>
-                          <Text style={[styles.tableCell, { width: 100 }]}>Interested Qty</Text>
-                          <Text style={[styles.tableCell, { width: 120 }]}>Remarks</Text>
-                          <Text style={[styles.tableCell, { width: 100 }]}>Action</Text>
-                        </View>
+                  <ScrollView style={styles.cardListContainer} showsVerticalScrollIndicator={false}>
+                    {receiversList.length > 0 ? (
+                      receiversList.map((item, index) => (
+                        <View key={index} style={styles.receiverCard}>
+                          <View style={styles.receiverCardHeader}>
+                            <View style={styles.receiverCardNumber}>
+                              <Text style={styles.receiverCardNumberText}>{index + 1}</Text>
+                            </View>
+                            <Text style={styles.receiverCardName}>{item.industry_name}</Text>
+                          </View>
 
-                        {receiversList.length > 0 ? (
-                          receiversList.map((item, index) => (
-                            <View key={index} style={styles.tableRow}>
-                              <Text style={[styles.tableCell, { width: 50, textAlign: "center" }]}>
-                                {index + 1}
-                              </Text>
-                              <Text style={[styles.tableCell, { width: 150 }]} numberOfLines={1}>
-                                {item.industry_name}
-                              </Text>
-                              <Text style={[styles.tableCell, { width: 120 }]} numberOfLines={1}>
-                                {item.district_name}
-                              </Text>
-                              <Text style={[styles.tableCell, { width: 150 }]} numberOfLines={1}>
-                                {item.industry_address}
-                              </Text>
-                              <Text style={[styles.tableCell, { width: 100, textAlign: "right" }]}>
-                                {item.interest_qty}
-                              </Text>
-                              <Text style={[styles.tableCell, { width: 120 }]} numberOfLines={1}>
-                                {item.remarks || "-"}
-                              </Text>
-                              <View style={[styles.tableCell, { width: 100 }]}>
-                                <TouchableOpacity
-                                  style={styles.approveButton}
-                                  onPress={() => handleApprove(item.waste_disposal_interest_id)}
-                                  disabled={loading}
-                                >
-                                  {loading ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                  ) : (
-                                    <Text style={styles.approveButtonText}>Approve</Text>
-                                  )}
-                                </TouchableOpacity>
+                          <View style={styles.receiverCardBody}>
+                            <View style={styles.receiverRow}>
+                              <View style={styles.receiverCol6}>
+                                <Text style={styles.receiverLabel}>District</Text>
+                                <Text style={styles.receiverValue}>
+                                  {item.district_name || "-"}
+                                </Text>
+                              </View>
+                              <View style={styles.receiverCol6}>
+                                <Text style={styles.receiverLabel}>Interested Qty</Text>
+                                <Text style={styles.receiverValue}>
+                                  {item.interest_qty || "0"}
+                                </Text>
                               </View>
                             </View>
-                          ))
-                        ) : (
-                          <View style={styles.noDataContainer}>
-                            <Text style={styles.noDataText}>No Receivers Found</Text>
+
+                            <View style={styles.receiverRow}>
+                              <View style={styles.receiverCol12}>
+                                <Text style={styles.receiverLabel}>Contact Info</Text>
+                                <Text style={styles.receiverValue} numberOfLines={2}>
+                                  {item.industry_address || "-"}
+                                </Text>
+                              </View>
+                            </View>
+
+                            <View style={styles.receiverRow}>
+                              <View style={styles.receiverCol12}>
+                                <Text style={styles.receiverLabel}>Remarks</Text>
+                                <Text style={styles.receiverValue}>
+                                  {item.remarks || "-"}
+                                </Text>
+                              </View>
+                            </View>
                           </View>
-                        )}
+
+                          <View style={styles.receiverCardFooter}>
+                            <TouchableOpacity
+                              style={styles.approveButton}
+                              onPress={() => handleApprove(item.waste_disposal_interest_id)}
+                              disabled={loading}
+                            >
+                              {loading ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                              ) : (
+                                <Text style={styles.approveButtonText}>Approve</Text>
+                              )}
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <View style={styles.noDataContainer}>
+                        <Icon name="people-outline" size={40} color="#856404" />
+                        <Text style={styles.noDataText}>No Receivers Found</Text>
                       </View>
-                    </ScrollView>
-                  </View>
+                    )}
+                  </ScrollView>
                 </View>
               </View>
             </View>
@@ -462,10 +472,11 @@ function InterestedWasteList() {
     );
   };
 
+  // Render Waste List with Cards
   const renderWasteList = () => {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.card}>
+        <View style={styles.cardContainer}>
           <View style={styles.cardHeader}>
             <Icon name="list" size={24} color="#1e3a5f" />
             <Text style={styles.cardTitle}>Interested Waste List</Text>
@@ -520,41 +531,45 @@ function InterestedWasteList() {
                         <Text style={styles.loadingText}>Loading...</Text>
                       </View>
                     ) : wasteData.length > 0 && res === "datafound" ? (
-                      <View style={styles.tableContainer}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                          <View>
-                            <View style={styles.tableHeader}>
-                              <Text style={[styles.tableCell, { width: 50 }]}>S.No</Text>
-                              <Text style={[styles.tableCell, { width: 150 }]}>Name of Waste</Text>
-                              <Text style={[styles.tableCell, { width: 120 }]}>Available Qty</Text>
-                              <Text style={[styles.tableCell, { width: 120 }]}>Date</Text>
-                              <Text style={[styles.tableCell, { width: 100 }]}>Interested</Text>
-                              <Text style={[styles.tableCell, { width: 100 }]}>Action</Text>
+                      <ScrollView style={styles.cardListContainer} showsVerticalScrollIndicator={false}>
+                        {wasteData.map((ww, i) => (
+                          <View key={i} style={styles.wasteCard}>
+                            <View style={styles.wasteCardHeader}>
+                              <View style={styles.wasteCardNumber}>
+                                <Text style={styles.wasteCardNumberText}>{i + 1}</Text>
+                              </View>
+                              <Text style={styles.wasteCardTitle}>
+                                {ww.waste_name || ww.waste_type_name || "Waste"}
+                              </Text>
                             </View>
 
-                            {wasteData.map((ww, i) => (
-                              <View key={i} style={styles.tableRow}>
-                                <Text style={[styles.tableCell, { width: 50, textAlign: "center" }]}>
-                                  {i + 1}
-                                </Text>
-                                <Text style={[styles.tableCell, { width: 150 }]} numberOfLines={1}>
-                                  {ww.process_name || ww.waste_type_name}
-                                </Text>
-                                <Text style={[styles.tableCell, { width: 120, textAlign: "right" }]}>
-                                  {ww.current_available_qty}
-                                </Text>
-                                <Text style={[styles.tableCell, { width: 120 }]} numberOfLines={1}>
-                                  {ww.interest_submitted_date}
-                                </Text>
-                                <TouchableOpacity
-                                  style={[styles.tableCell, { width: 100 }]}
-                                  onPress={() => handleView(ww)}
-                                >
-                                  <Text style={styles.interestedCount}>
-                                    {ww.no_of_interest_receivers || 0}
+                            <View style={styles.wasteCardBody}>
+                              <View style={styles.wasteRow}>
+                                <View style={styles.wasteCol6}>
+                                  <Text style={styles.wasteLabel}>Available Qty</Text>
+                                  <Text style={styles.wasteValue}>
+                                    {ww.current_available_qty || "0"}
                                   </Text>
-                                </TouchableOpacity>
-                                <View style={[styles.tableCell, { width: 100 }]}>
+                                </View>
+                                <View style={styles.wasteCol6}>
+                                  <Text style={styles.wasteLabel}>Date</Text>
+                                  <Text style={styles.wasteValue} numberOfLines={1}>
+                                    {ww.interest_submitted_date || "-"}
+                                  </Text>
+                                </View>
+                              </View>
+
+                              <View style={styles.wasteRow}>
+                                <View style={styles.wasteCol6}>
+                                  <Text style={styles.wasteLabel}>Interested Receivers</Text>
+                                  <TouchableOpacity onPress={() => handleView(ww)}>
+                                    <Text style={styles.interestedCount}>
+                                      {ww.no_of_interest_receivers || 0}
+                                    </Text>
+                                  </TouchableOpacity>
+                                </View>
+                                <View style={styles.wasteCol6}>
+                                  <Text style={styles.wasteLabel}>Action</Text>
                                   <TouchableOpacity
                                     style={styles.viewButton}
                                     onPress={() => handleView(ww)}
@@ -564,10 +579,10 @@ function InterestedWasteList() {
                                   </TouchableOpacity>
                                 </View>
                               </View>
-                            ))}
+                            </View>
                           </View>
-                        </ScrollView>
-                      </View>
+                        ))}
+                      </ScrollView>
                     ) : res === "nodata" ? (
                       <View style={styles.noDataContainer}>
                         <Icon name="warning-outline" size={40} color="#856404" />
@@ -596,19 +611,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f7fa",
   },
-  card: {
+  // Card Container
+  cardContainer: {
     flex: 1,
     margin: 12,
     backgroundColor: "#fff",
-    borderRadius: 12,
-    elevation: 3,
+    borderRadius: 10,
+    elevation: 4,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    overflow: "hidden",
   },
   cardHeader: {
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "#f8fafc",
     borderBottomWidth: 1,
     borderBottomColor: "#e8ecf1",
     flexDirection: "row",
@@ -619,34 +638,225 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "700",
     color: "#1e3a5f",
     flex: 1,
     textAlign: "center",
   },
   cardBody: {
-    padding: 16,
+    padding: 12,
+    flex: 1,
   },
+  // Panel
   panel: {
-    marginBottom: 16,
+    backgroundColor: "#fff",
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e8ecf1",
-    borderRadius: 8,
     overflow: "hidden",
+    flex: 1,
   },
   panelHeader: {
     backgroundColor: "#2e7d32",
-    padding: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   panelHeaderText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   panelBody: {
-    padding: 16,
+    padding: 12,
   },
+  // Waste Card
+  wasteCard: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#e8ecf1",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    overflow: "hidden",
+  },
+  wasteCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#f8fafc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e8ecf1",
+  },
+  wasteCardNumber: {
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginRight: 10,
+  },
+  wasteCardNumberText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  wasteCardTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1e3a5f",
+    flex: 1,
+  },
+  wasteCardBody: {
+    padding: 12,
+  },
+  wasteRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  wasteCol6: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  wasteLabel: {
+    fontSize: 10,
+    color: "#888",
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  wasteValue: {
+    fontSize: 13,
+    color: "#333",
+    fontWeight: "500",
+  },
+  // Receiver Card
+  receiverCard: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#e8ecf1",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    overflow: "hidden",
+  },
+  receiverCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: "#f8fafc",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e8ecf1",
+  },
+  receiverCardNumber: {
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 12,
+    marginRight: 10,
+  },
+  receiverCardNumberText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  receiverCardName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1e3a5f",
+    flex: 1,
+  },
+  receiverCardBody: {
+    padding: 12,
+  },
+  receiverRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+  },
+  receiverCol6: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  receiverCol12: {
+    flex: 1,
+    paddingHorizontal: 4,
+  },
+  receiverLabel: {
+    fontSize: 10,
+    color: "#888",
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  receiverValue: {
+    fontSize: 13,
+    color: "#333",
+    fontWeight: "500",
+  },
+  receiverCardFooter: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#e8ecf1",
+    backgroundColor: "#fafbfc",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  // Buttons
+  goButton: {
+    backgroundColor: "#2e7d32",
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: "center",
+    marginTop: 26,
+  },
+  goButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  viewButtonText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "500",
+    marginLeft: 4,
+  },
+  approveButton: {
+    backgroundColor: "#28a745",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: "center",
+    minWidth: 80,
+  },
+  approveButtonText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  // Interested Count
+  interestedCount: {
+    color: "#2e7d32",
+    fontSize: 14,
+    fontWeight: "600",
+    textDecorationLine: "underline",
+  },
+  // Form
   row: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -667,175 +877,110 @@ const styles = StyleSheet.create({
     marginTop: -24,
   },
   label: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 4,
+    marginBottom: 3,
   },
   star: {
     color: "red",
   },
   errorText: {
     color: "#dc3545",
-    fontSize: 12,
-    marginTop: 4,
+    fontSize: 11,
+    marginTop: 3,
   },
-  goButton: {
-    backgroundColor: "#2e7d32",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 26,
-  },
-  goButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
+  // Loading
   loadingContainer: {
-    padding: 40,
+    padding: 30,
     alignItems: "center",
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 8,
     color: "#666",
-    fontSize: 14,
+    fontSize: 13,
   },
+  // No Data
   noDataContainer: {
-    padding: 30,
+    padding: 20,
     alignItems: "center",
     backgroundColor: "#fff3cd",
-    borderRadius: 8,
-    marginTop: 8,
+    borderRadius: 6,
+    marginTop: 6,
   },
   noDataText: {
     color: "#856404",
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: 13,
+    marginTop: 4,
     textAlign: "center",
   },
-  tableContainer: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 4,
-    overflow: "hidden",
-    marginTop: 8,
-  },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#d8ece8",
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    alignItems: "center",
-  },
-  tableCell: {
-    fontSize: 11,
-    paddingHorizontal: 3,
-    color: "#333",
-  },
-  viewButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#2e7d32",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  viewButtonText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "500",
-    marginLeft: 4,
-  },
-  interestedCount: {
-    color: "#2e7d32",
-    fontWeight: "600",
-    textAlign: "center",
-    textDecorationLine: "underline",
-  },
-  approveButton: {
-    backgroundColor: "#28a745",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    alignItems: "center",
-    minWidth: 60,
-  },
-  approveButtonText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  // Detail View Styles
+  // Detail View
   detailCard: {
     backgroundColor: "#f8fafc",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 12,
+    padding: 10,
+    borderRadius: 6,
+    marginBottom: 10,
   },
   detailRow: {
     flexDirection: "row",
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderBottomWidth: 1,
     borderBottomColor: "#e8ecf1",
   },
   detailLabel: {
-    width: 120,
-    fontSize: 13,
+    width: 100,
+    fontSize: 12,
     fontWeight: "600",
     color: "#333",
   },
   detailValue: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 12,
     color: "#555",
   },
   detailGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   detailBox: {
     backgroundColor: "#f8fafc",
-    padding: 12,
-    borderRadius: 8,
+    padding: 10,
+    borderRadius: 6,
     width: "33.33%",
-    paddingHorizontal: 6,
+    paddingHorizontal: 4,
   },
   detailBoxLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: "#333",
     marginBottom: 2,
   },
   detailBoxValue: {
-    fontSize: 12,
+    fontSize: 11,
     color: "#555",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   receiversSection: {
-    marginTop: 12,
+    marginTop: 10,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#e8f5e9",
-    padding: 10,
-    borderRadius: 8,
+    padding: 8,
+    borderRadius: 6,
     marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: "#2e7d32",
-    marginLeft: 8,
+    marginLeft: 6,
+  },
+  cardListContainer: {
+    flex: 1,
+    maxHeight: 500,
   },
   // Dropdown Styles
   dropdownContainer: {
@@ -848,11 +993,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#ced4da",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     backgroundColor: "#fff",
-    minHeight: 44,
+    minHeight: 40,
   },
   dropdownDisabled: {
     backgroundColor: "#f0f0f0",
@@ -861,7 +1006,7 @@ const styles = StyleSheet.create({
     borderColor: "#dc3545",
   },
   dropdownButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#333",
     flex: 1,
   },
@@ -877,22 +1022,22 @@ const styles = StyleSheet.create({
   dropdownModalContent: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     width: "90%",
     maxHeight: "70%",
-    minHeight: 200,
+    minHeight: 400,
   },
   dropdownModalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
-    paddingBottom: 8,
+    marginBottom: 10,
+    paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: "#e8ecf1",
   },
   dropdownModalTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: "#1e3a5f",
     flex: 1,
@@ -900,7 +1045,7 @@ const styles = StyleSheet.create({
   dropdownListWrapper: {
     flex: 1,
     minHeight: 100,
-    maxHeight: 300,
+    maxHeight: 250,
   },
   dropdownFlatList: {
     flex: 1,
@@ -912,20 +1057,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#e8ecf1",
-    minHeight: 44,
+    minHeight: 40,
   },
   dropdownOptionSelected: {
     backgroundColor: "#e8f5e9",
   },
   dropdownOptionText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#333",
     flex: 1,
-    marginRight: 8,
+    marginRight: 6,
   },
   dropdownOptionTextSelected: {
     color: "#2e7d32",
