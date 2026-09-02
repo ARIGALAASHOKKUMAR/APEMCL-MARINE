@@ -794,6 +794,12 @@ const AnalysisReport = () => {
       { key: 'Chromium', value: item?.hexavalent_chromium_value, limit: limits?.chromium, isPH: false },
     ];
  
+    // Check if any parameter is invalid (red)
+    const hasInvalidParameter = parameters.some(param => {
+      const { isValid } = getValueColor(param.value, param.limit, param.isPH);
+      return !isValid;
+    });
+ 
     return (
       <View style={styles.cardItem}>
         <View style={styles.cardHeaderItem}>
@@ -854,7 +860,7 @@ const AnalysisReport = () => {
             })}
           </View>
              {state.roleId!==2&&(
-<View style={styles.cardActions}>
+          <View style={styles.cardActions}>
             {isAssigned ? (
               <TouchableOpacity style={styles.disabledButton} disabled>
                 <Icon name="person-add-outline" size={14} color="#fff" />
@@ -873,15 +879,26 @@ const AnalysisReport = () => {
               </TouchableOpacity>
             )}
             <TouchableOpacity
-              style={styles.noticeButton}
+              style={[
+                styles.noticeButton,
+                !hasInvalidParameter && styles.noticeButtonDisabled
+              ]}
               onPress={() => {
-                setShowNoticeModal(true);
-                setRowData(item);
-                noticeFormik.resetForm();
+                if (hasInvalidParameter) {
+                  setShowNoticeModal(true);
+                  setRowData(item);
+                  noticeFormik.resetForm();
+                }
               }}
+              disabled={!hasInvalidParameter}
             >
-              <Icon name="notifications-outline" size={14} color="#000" />
-              <Text style={styles.noticeButtonText}>Notice</Text>
+              <Icon name="notifications-outline" size={14} color={!hasInvalidParameter ? '#999' : '#000'} />
+              <Text style={[
+                styles.noticeButtonText,
+                !hasInvalidParameter && styles.noticeButtonTextDisabled
+              ]}>
+                Notice
+              </Text>
             </TouchableOpacity>
           </View>
              )}
@@ -1204,11 +1221,17 @@ const styles = StyleSheet.create({
     flex: 0.45,
     justifyContent: 'center',
   },
+  noticeButtonDisabled: {
+    backgroundColor: '#f0f0f0',
+  },
   noticeButtonText: {
     color: '#000',
     fontSize: 11,
     fontWeight: '600',
     marginLeft: 4,
+  },
+  noticeButtonTextDisabled: {
+    color: '#999',
   },
   disabledButton: {
     flexDirection: 'row',
@@ -1466,4 +1489,3 @@ const styles = StyleSheet.create({
 });
  
 export default AnalysisReport;
- 
