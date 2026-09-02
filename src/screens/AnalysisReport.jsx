@@ -930,18 +930,17 @@ const AnalysisReport = () => {
               <Text style={styles.loadingText}>Loading...</Text>
             </View>
           ) : (
-            <FlatList
-              data={data}
-              keyExtractor={(item, index) => index.toString()}
-              renderItem={renderCard}
-              contentContainerStyle={styles.listContainer}
-              ListEmptyComponent={
-                <View style={styles.noRecords}>
-                  <Text style={styles.noRecordsText}>No Records Found</Text>
-                </View>
-              }
-              showsVerticalScrollIndicator={false}
-            />
+            data.length > 0 ? (
+    data.map((item, index) => (
+      <View key={index}>
+        {renderCard({ item, index })}
+      </View>
+    ))
+  ) : (
+    <View style={styles.noRecords}>
+      <Text style={styles.noRecordsText}>No Records Found</Text>
+    </View>
+  )
           )}
         </View>
       </View>
