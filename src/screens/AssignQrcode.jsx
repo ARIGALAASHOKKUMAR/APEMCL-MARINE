@@ -28,6 +28,7 @@ import {
   commonAPICall,
   CONTEXT_HEADING,
   MARINEDISCHARGEDETAILS,
+  TEAMLEADERDETAILS,
   UPDATEASSIGNDUTY,
 } from "../utils/utils";
 import ImageBucketRN from "../utils/ImageBucketRN";
@@ -49,8 +50,7 @@ const SampleCollectionRequests = () => {
   const [showUpdateDatePicker, setShowUpdateDatePicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
   const [tempUpdateDate, setTempUpdateDate] = useState(new Date());
-
-  console.log("renderCardrenderCard", data);
+  const [teamLeaders, setTeamLeaders] = useState([]);
 
   // Validation Schemas
   const validationSchema = Yup.object({
@@ -272,8 +272,17 @@ const SampleCollectionRequests = () => {
     const formattedDate = currentDate.toISOString().split("T")[0];
     updateFormik.setFieldValue("assignedDate", formattedDate);
   };
-
+  const GetTeamLeaders = async () => {
+      const res = await commonAPICall(TEAMLEADERDETAILS, {}, "get", dispatch);
+      if (res.status === 200) {
+        setTeamLeaders(res.data.TeamLeaderDetails || []);
+      } else {
+        setTeamLeaders([]);
+      }
+   
+  };
   useEffect(() => {
+    GetTeamLeaders();
     GetData();
   }, []);
 
@@ -316,7 +325,13 @@ const SampleCollectionRequests = () => {
                   dropdownIconColor="#666"
                 >
                   <Picker.Item label="Select Team Leader" value="" />
-                  <Picker.Item label="TEAML" value="TEAML" />
+                  {teamLeaders.map((leader) => (
+                    <Picker.Item
+                      key={leader.userid}
+                      label={leader.employeename}
+                      value={leader.userid}
+                    />
+                  ))}
                 </Picker>
               </View>
               {formik.errors.assignedTeamLeaderId &&
@@ -428,7 +443,13 @@ const SampleCollectionRequests = () => {
                   dropdownIconColor="#666"
                 >
                   <Picker.Item label="Select Team Leader" value="" />
-                  <Picker.Item label="TEAML" value="TEAML" />
+                  {teamLeaders.map((leader) => (
+                    <Picker.Item
+                      key={leader.userid}
+                      label={leader.employeename}
+                      value={leader.userid}
+                    />
+                  ))}
                 </Picker>
               </View>
               {updateFormik.errors.assignedTeamLeaderId &&

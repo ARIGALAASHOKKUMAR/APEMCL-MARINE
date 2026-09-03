@@ -272,6 +272,7 @@ export const TRANSPORTVEHICLESELECTIONDETAILS = "api/user/transport-vehicle-sele
 export const FLOWMETERREADINGPOST = "api/user/effluent-receiver-action"
 export const EFFPIPELINEDISCHARGEDETAILS = "api/user/effluent-pipeline-discharge-details"
 export const EFFPIPELINEDISCHARGEDETAILSREC = "api/user/effluent-waste-generator-details"
+export const TEAMLEADERDETAILS = "api/user/team-leader-details"
 // Add this to your utils.js file
 export const MARINEDISCHARGEDRILLDOWN = "/api/user/marine-discharge-dashboard-drilldown";
 
