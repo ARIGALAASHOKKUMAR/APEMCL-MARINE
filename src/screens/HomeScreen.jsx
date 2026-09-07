@@ -12,11 +12,13 @@ import {
   Modal,
   FlatList,
   ActivityIndicator,
+  BackHandler,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { commonAPICall, MARINEMAINDASHBOARD, MARINEDISCHARGEDRILLDOWN } from "../utils/utils";
+import { logOut } from "../actions";
 
 const { width } = Dimensions.get("window");
 
@@ -35,6 +37,9 @@ const HomeScreen = ({ navigation }) => {
   const [drillData, setDrillData] = useState([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
+  
+  // Logout modal state
+  const [logoutVisible, setLogoutVisible] = useState(false);
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -150,11 +155,48 @@ const HomeScreen = ({ navigation }) => {
     },
   };
 
+  // Handle hardware back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress
+    );
+
+    return () => backHandler.remove();
+  }, []);
+
+  const handleBackPress = () => {
+    // Show custom logout modal
+    setLogoutVisible(true);
+    return true; // Prevent default back behavior
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Close logout modal
+      setLogoutVisible(false);
+      
+      // Dispatch logout action to clear Redux state
+      dispatch(logOut());
+      
+      // Navigate to Login screen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    } catch (error) {
+      console.log("Logout error:", error);
+      // Even if there's an error, try to navigate to login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    }
+  };
+
   // Role-based drill types mapping
   const getDrillTypeForRole = (key) => {
-
-    console.log("lkl",key);
-    
+    console.log("lkl", key);
 
     const roleDrillMap = {
       // Admin role
@@ -291,7 +333,7 @@ const HomeScreen = ({ navigation }) => {
       const url = `${MARINEDISCHARGEDRILLDOWN}?countType=${countType}`;
       const res = await commonAPICall(url, {}, "get", dispatch);
       
-      console.log("Drill API Response:", url,res.status);
+      console.log("Drill API Response:", url, res.status);
       
       if (res?.status === 200) {
         // Check if data exists and extract the drilldown array
@@ -528,9 +570,6 @@ const HomeScreen = ({ navigation }) => {
               ]} 
             />
           </View>
-          {/* <View style={styles.drillIndicator}>
-            <Icon name="chevron-right" size={16} color="#999" />
-          </View> */}
         </View>
       </TouchableOpacity>
     );
@@ -662,14 +701,6 @@ const HomeScreen = ({ navigation }) => {
                 renderItem={({ item, index }) => (
                   <TouchableOpacity 
                     style={styles.drillItem}
-                    // onPress={() => {
-                    //   // Navigate to detail screen with the item data
-                    //   setDrillModalVisible(false);
-                    //   navigation.navigate('DischargeDetail', { 
-                    //     postingId: item.postingid,
-                    //     requestId: item.dischargerequestid
-                    //   });
-                    // }}
                     activeOpacity={0.7}
                   >
                     <View style={styles.drillItemNumber}>
@@ -700,9 +731,6 @@ const HomeScreen = ({ navigation }) => {
                         </Text>
                       )}
                     </View>
-                    {/* <View style={styles.drillItemArrow}>
-                      <Icon name="chevron-right" size={20} color="#6C5CE7" />
-                    </View> */}
                   </TouchableOpacity>
                 )}
                 ItemSeparatorComponent={() => <View style={styles.drillSeparator} />}
@@ -710,6 +738,41 @@ const HomeScreen = ({ navigation }) => {
                 contentContainerStyle={styles.drillListContent}
               />
             )}
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  // Render logout confirmation modal
+  const renderLogoutModal = () => {
+    return (
+      <Modal
+        visible={logoutVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setLogoutVisible(false)}
+      >
+        <View style={styles.logoutModalOverlay}>
+          <View style={styles.logoutModalContent}>
+            <Text style={styles.logoutModalTitle}>Confirm Logout</Text>
+            <Text style={styles.logoutModalMessage}>
+              Are you sure you want to logout?
+            </Text>
+            <View style={styles.logoutModalButtons}>
+              <TouchableOpacity
+                style={[styles.logoutModalButton, styles.logoutCancelButton]}
+                onPress={() => setLogoutVisible(false)}
+              >
+                <Text style={styles.logoutCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.logoutModalButton, styles.logoutConfirmButton]}
+                onPress={handleLogout}
+              >
+                <Text style={styles.logoutConfirmButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -758,6 +821,7 @@ const HomeScreen = ({ navigation }) => {
       </ScrollView>
 
       {renderDrillModal()}
+      {renderLogoutModal()}
     </SafeAreaView>
   );
 };
@@ -1102,6 +1166,64 @@ const styles = StyleSheet.create({
   drillSeparator: {
     height: 1,
     backgroundColor: '#F0F0F0',
+  },
+  // Logout Modal Styles
+  logoutModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  logoutModalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 24,
+    width: width - 48,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  logoutModalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 14,
+    color: "#111827",
+  },
+  logoutModalMessage: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  logoutModalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  logoutModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  logoutCancelButton: {
+    backgroundColor: "#f5f5f5",
+  },
+  logoutConfirmButton: {
+    backgroundColor: "#DC2626",
+  },
+  logoutCancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+  },
+  logoutConfirmButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
   },
 });
 
