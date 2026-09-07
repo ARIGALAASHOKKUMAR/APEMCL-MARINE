@@ -236,6 +236,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="MasterDataAddVehicleTypes"
                       scrollEnabled={false}
                     >
@@ -250,6 +251,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="OpenRegistrations"
                       scrollEnabled={false}
                     >
@@ -264,6 +266,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="ManagePermittedQuantity"
                       scrollEnabled={false}
                     >
@@ -278,6 +281,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="AddWasteDisposal"
                       scrollEnabled={false}
                     >
@@ -292,6 +296,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="RecentWasteDisposalList"
                       scrollEnabled={false}
                     >
@@ -306,6 +311,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="InterestedWasteList"
                       scrollEnabled={false}
                     >
@@ -320,6 +326,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="GenApprovedList"
                       scrollEnabled={false}
                     >
@@ -334,6 +341,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="TransportVehicleSelection"
                       scrollEnabled={false}
                     >
@@ -348,6 +356,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="TransportersList"
                       scrollEnabled={false}
                     >
@@ -362,6 +371,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="RegistrationPayment"
                       scrollEnabled={false}
                     >
@@ -376,6 +386,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="ManifestConfirmation"
                       scrollEnabled={false}
                     >
@@ -392,6 +403,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="PendingList"
                       scrollEnabled={false}
                     >
@@ -411,6 +423,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="AcceptedList"
                       scrollEnabled={false}
                     >
@@ -430,6 +443,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="RejectedList"
                       scrollEnabled={false}
                     >
@@ -449,6 +463,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="ManifestList"
                       scrollEnabled={false}
                     >
@@ -461,13 +476,13 @@ export default function Routes() {
                   </SessionChecking>
                 )}
               </Stack.Screen>
-
               {/* Transport Rejected Screen */}
               <Stack.Screen name="TransportRejected">
                 {(props) => (
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="TransportRejected"
                       scrollEnabled={false}
                     >
@@ -483,6 +498,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="ConfirmationRequired"
                       scrollEnabled={false}
                     >
@@ -493,7 +509,6 @@ export default function Routes() {
               </Stack.Screen>
 
               {/* Effluent Pipeline Discharge */}
-            
 
               {/* List Marine Discharges */}
               <Stack.Screen name="ListMarineDischarges">
@@ -501,6 +516,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="ListMarineDischarges"
                       scrollEnabled={false}
                     >
@@ -514,6 +530,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route}
                       currentScreenName="ManifestListRec"
                       scrollEnabled={false}
                     >
@@ -527,6 +544,7 @@ export default function Routes() {
                   <SessionChecking navigation={props.navigation}>
                     <SiteLayout
                       navigation={props.navigation}
+                      route={props.route} // Pass the route prop
                       currentScreenName="EffluentPipelineDischarge"
                       scrollEnabled={false}
                     >

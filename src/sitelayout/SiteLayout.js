@@ -17,6 +17,7 @@ import {
   View,
   StatusBar,
   FlatList,
+  BackHandler,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
@@ -45,6 +46,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import labour_logo from "../../assets/logo2.png";
 import { ToastProvider } from "react-native-sprinkle-toast";
+import { useFocusEffect, useNavigationState, CommonActions } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -54,6 +56,7 @@ const FALLBACK_PROFILE =
 const SiteLayout = ({
   children,
   navigation,
+  route,
   currentScreenName = "HOME",
   showProfile = true,
 }) => {
@@ -93,6 +96,8 @@ const SiteLayout = ({
 
   const profileButtonRef = useRef(null);
   const intervalRef = useRef(null);
+  const isNavigatingRef = useRef(false);
+  const navigationStackRef = useRef([]);
 
   const profileSource = useMemo(() => {
     if (photoPath && typeof photoPath === "string") {
@@ -100,6 +105,92 @@ const SiteLayout = ({
     }
     return { uri: FALLBACK_PROFILE };
   }, [photoPath]);
+
+  // Track navigation state
+  const currentRouteName = useNavigationState(state => state?.routes[state.index]?.name);
+
+  // Reset state when navigating to Home
+  useEffect(() => {
+    if (currentRouteName === "Home" || currentRouteName === "HOME" || currentRouteName === "Dashboard") {
+      setSelectedParent(null);
+      setSelectedChild(null);
+    }
+  }, [currentRouteName]);
+
+  // Handle hardware/gesture back button
+  const handleBackPress = useCallback(() => {
+    if (isNavigatingRef.current) {
+      return true;
+    }
+
+    if (selectedChild) {
+      // If child is selected, go back to children list
+      goBackToChildren();
+      return true;
+    } else if (selectedParent) {
+      // If parent is selected, go back to dashboard
+      goBackToDashboard();
+      return true;
+    }
+    return false;
+  }, [selectedChild, selectedParent]);
+
+  // Add hardware back button listener for Android
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleBackPress,
+    );
+
+    return () => backHandler.remove();
+  }, [handleBackPress]);
+
+  // Handle navigation back gestures (iOS and Android)
+  useEffect(() => {
+    let isBackHandled = false;
+
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      // If we have a selected parent or child, prevent default navigation
+      if ((selectedParent || selectedChild) && !isBackHandled && !isNavigatingRef.current) {
+        e.preventDefault();
+
+        // Handle the back action manually
+        if (selectedChild) {
+          goBackToChildren();
+        } else if (selectedParent) {
+          goBackToDashboard();
+        }
+        
+        isBackHandled = true;
+        setTimeout(() => {
+          isBackHandled = false;
+        }, 300);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, selectedParent, selectedChild]);
+
+  // Restore navigation state when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      // Check if we have navigation params with selected child/parent
+      if (route?.params?.selectedChild) {
+        setSelectedChild(route.params.selectedChild);
+        setSelectedParent(route.params.selectedParent || null);
+      } else if (route?.params?.selectedParent) {
+        setSelectedParent(route.params.selectedParent);
+        setSelectedChild(null);
+      } else {
+        // If no params, reset both selections only if we're on the main screen
+        const routeName = route?.name || currentScreenName;
+        if (routeName === "Home" || routeName === "HOME" || routeName === "Dashboard") {
+          setSelectedParent(null);
+          setSelectedChild(null);
+        }
+      }
+    }, [route?.params, route?.name, currentScreenName]),
+  );
 
   useEffect(() => {
     dispatch(hideLoader());
@@ -234,6 +325,11 @@ const SiteLayout = ({
       setSelectedParent(parent);
       setSelectedChild(null);
       setSidebarVisible(false);
+
+      navigation.setParams({
+        selectedParent: parent,
+        selectedChild: null,
+      });
     } else {
       if (parent.targeturl) {
         if (parent.targeturl.startsWith("https")) {
@@ -241,33 +337,79 @@ const SiteLayout = ({
             url: parent.targeturl,
           });
         } else {
-          navigation.navigate(parent.targeturl);
+          navigation.navigate(parent.targeturl, {
+            selectedParent: parent,
+            selectedChild: null,
+          });
         }
       }
     }
   };
 
   const handleChildPress = (child) => {
-    setSelectedChild(child);
+    const hasNoChildren = !child.childs || child.childs.length === 0;
 
-    if (child?.targeturl_c) {
-      if (child.targeturl_c.startsWith("https")) {
-        navigation.navigate("WebViewScreen", {
-          url: child.targeturl_c,
-        });
-      } else {
-        navigation.navigate(child.targeturl_c);
+    if (hasNoChildren) {
+      if (child?.targeturl_c) {
+        if (child.targeturl_c.startsWith("https")) {
+          navigation.navigate("WebViewScreen", {
+            url: child.targeturl_c,
+          });
+        } else {
+          navigation.navigate(child.targeturl_c, {
+            selectedChild: child,
+            selectedParent: selectedParent,
+          });
+        }
       }
+    } else {
+      setSelectedParent(child);
+      setSelectedChild(null);
+      setSidebarVisible(false);
+
+      navigation.setParams({
+        selectedParent: child,
+        selectedChild: null,
+      });
     }
   };
 
-  const goBackToParents = () => {
+  const goBackToDashboard = () => {
+    if (isNavigatingRef.current) {
+      return;
+    }
+
+    isNavigatingRef.current = true;
+    
+    // Clear state immediately
     setSelectedParent(null);
     setSelectedChild(null);
+    
+    // Clear navigation params
+    navigation.setParams({
+      selectedParent: null,
+      selectedChild: null,
+    });
+    
+    // Use CommonActions.reset to go back to Home
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: currentScreenName || "Home" }],
+      })
+    );
+    
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 500);
   };
 
   const goBackToChildren = () => {
     setSelectedChild(null);
+    navigation.setParams({
+      selectedChild: null,
+      selectedParent: selectedParent,
+    });
   };
 
   const openLogoutPopup = () => {
@@ -279,13 +421,12 @@ const SiteLayout = ({
     setSidebarVisible(!sidebarVisible);
   };
 
-  // Determine current selection path and back button behavior
   const isChildSelected = !!selectedChild;
   const isParentSelected = !!selectedParent && !selectedChild;
 
   const getBackButtonText = () => {
     if (isChildSelected) return "Back to Services";
-    if (isParentSelected) return "Back to Main Menu";
+    if (isParentSelected) return "Back to Dashboard";
     return "";
   };
 
@@ -301,7 +442,6 @@ const SiteLayout = ({
     return "";
   };
 
-  // Render Sidebar
   const renderSidebar = () => (
     <Modal
       visible={sidebarVisible}
@@ -316,7 +456,6 @@ const SiteLayout = ({
           onPress={() => setSidebarVisible(false)}
         />
         <View style={styles.sidebarContainer}>
-          {/* Sidebar Header */}
           <View style={styles.sidebarHeader}>
             <Image source={labour_logo} style={styles.sidebarLogo} />
             <Text style={styles.sidebarHeaderTitle}>APEMCL</Text>
@@ -328,15 +467,16 @@ const SiteLayout = ({
             </TouchableOpacity>
           </View>
 
-          {/* User Info */}
           <View style={styles.sidebarUserInfo}>
             <Image source={profileSource} style={styles.sidebarUserImage} />
             <Text style={styles.sidebarUserName}>{username || "User"}</Text>
             <Text style={styles.sidebarUserRole}>{roleName || "Role"}</Text>
           </View>
 
-          {/* Menu Items */}
-          <ScrollView style={styles.sidebarMenu} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.sidebarMenu}
+            showsVerticalScrollIndicator={false}
+          >
             {parents.map((parent, index) => {
               const bg = parentColors[index % parentColors.length];
               const hasChildren = parent.childs && parent.childs.length > 0;
@@ -348,8 +488,14 @@ const SiteLayout = ({
                   onPress={() => handleParentPress(parent)}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.sidebarMenuIcon, { backgroundColor: bg }]}>
-                    <Icon name={getIconName(parent.menuitemname)} size={18} color="#fff" />
+                  <View
+                    style={[styles.sidebarMenuIcon, { backgroundColor: bg }]}
+                  >
+                    <Icon
+                      name={getIconName(parent.menuitemname)}
+                      size={18}
+                      color="#fff"
+                    />
                   </View>
                   <Text style={styles.sidebarMenuText} numberOfLines={2}>
                     {parent.menuitemname}
@@ -367,7 +513,6 @@ const SiteLayout = ({
             })}
           </ScrollView>
 
-          {/* Sidebar Footer */}
           <View style={styles.sidebarFooter}>
             <TouchableOpacity
               style={styles.sidebarFooterItem}
@@ -386,196 +531,180 @@ const SiteLayout = ({
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#0F172A" barStyle="light-content" />
       <ToastProvider>
-    
-      <View style={styles.container}>
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={toggleSidebar}>
-              <Ionicons name="menu" size={28} color="#fff" />
-            </TouchableOpacity>
-            {/* <Image
-              source={labour_logo}
-              style={styles.logo}
-              resizeMode="contain"
-            /> */}
-            <View>
-              <Text style={styles.headerTitle}>APEMCL</Text>
-              {/* <Text style={styles.headerSubTitle}>
-                APEMCL, Govt. of A.P
-              </Text> */}
-            </View>
-          </View>
-
-          <View style={styles.headerRight}>
-
-            <Text style={{color:"white",fontWeight:"bold"}}>Welcome:{username}</Text>
-          </View>
-        </View>
-
-        {/* SIDEBAR */}
-        {renderSidebar()}
-
-        {/* PROFILE MENU */}
-        {profileMenuVisible && (
-          <View style={styles.profileMenu}>
-            <TouchableOpacity
-              style={styles.profileMenuItem}
-              onPress={() =>
-                dispatch(
-                  showModal(
-                    <View>
-                      <Text style={styles.modalTitle}>Profile Details</Text>
-                      <Image source={profileSource} style={styles.modalImage} />
-                      <Text style={styles.profileText}>
-                        USER ID : {userId || "-"}
-                      </Text>
-                      <Text style={styles.profileText}>
-                        Name : {username || "-"}
-                      </Text>
-                      <Text style={styles.profileText}>
-                        Role : {roleName || "-"}
-                      </Text>
-                      <Text style={styles.profileText}>
-                        Last Login : {formatSimpleHtmlText(lastLoginTime)}
-                      </Text>
-                      <Text style={styles.profileText}>
-                        Last Logout : {formatSimpleHtmlText(lastLogoutTime)}
-                      </Text>
-                      <Text style={styles.profileText}>
-                        Last Failure Attempt :{" "}
-                        {formatSimpleHtmlText(lastFailureAttemptTime)}
-                      </Text>
-                      {!!loginLocation && roleId === 1 && (
-                        <Text style={styles.profileText}>
-                          Login Location : {loginLocation}
-                        </Text>
-                      )}
-                    </View>,
-                  ),
-                )
-              }
-            >
-              <Icon name="user" size={18} color="#111827" />
-              <Text style={styles.profileMenuText}>Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.profileMenuItem}
-              onPress={openLogoutPopup}
-            >
-              <Icon name="log-out" size={18} color="#DC2626" />
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <UserMessage />
-
-        {/* BODY */}
-        <ScrollView style={styles.body} showsVerticalScrollIndicator={false}>
-          {/* BACK BUTTON */}
-          {(selectedParent || selectedChild) && (
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={selectedChild ? goBackToChildren : goBackToParents}
-            >
-              <Ionicons name="arrow-back" size={18} color="#fff" />
-              <Text style={styles.backBtnText}>{getBackButtonText()}</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Show selected item name header */}
-          {(selectedParent || selectedChild) && (
-            <View style={styles.selectedItemContainer}>
-              <Text style={styles.selectedItemLabel}>
-                {getCurrentSelectionType()}:
-              </Text>
-              <Text style={styles.selectedItemName}>
-                {getCurrentSelectionName()}
-              </Text>
-            </View>
-          )}
-
-          {/* CHILDREN */}
-          {selectedParent && !selectedChild && (
-            <>
-              <View style={styles.parentHeaderCard}>
-                <Text style={styles.parentHeaderText}>
-                  {selectedParent.menuitemname}
-                </Text>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity onPress={toggleSidebar}>
+                <Ionicons name="menu" size={28} color="#fff" />
+              </TouchableOpacity>
+              <View>
+                <Text style={styles.headerTitle}>APEMCL</Text>
               </View>
+            </View>
 
-              <View style={styles.childrenGrid}>
-                {selectedParent?.childs?.map((child, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.childCard}
-                    onPress={() => handleChildPress(child)}
-                    activeOpacity={0.85}
-                  >
-                    <View style={styles.childLeft}>
-                      <View style={styles.childIcon}>
-                        <Ionicons
-                          name="chevron-forward"
-                          size={16}
-                          color="#4F46E5"
+            <View style={styles.headerRight}>
+              <Text style={{ color: "white", fontWeight: "bold" }}>
+                Welcome:{username}
+              </Text>
+            </View>
+          </View>
+
+          {renderSidebar()}
+
+          {profileMenuVisible && (
+            <View style={styles.profileMenu}>
+              <TouchableOpacity
+                style={styles.profileMenuItem}
+                onPress={() =>
+                  dispatch(
+                    showModal(
+                      <View>
+                        <Text style={styles.modalTitle}>Profile Details</Text>
+                        <Image
+                          source={profileSource}
+                          style={styles.modalImage}
                         />
-                      </View>
-                      <Text style={styles.childText} numberOfLines={2}>
-                        {child.menuitemname_c}
-                      </Text>
-                    </View>
-                    <Ionicons name="open-outline" size={18} color="#94A3B8" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
+                        <Text style={styles.profileText}>
+                          USER ID : {userId || "-"}
+                        </Text>
+                        <Text style={styles.profileText}>
+                          Name : {username || "-"}
+                        </Text>
+                        <Text style={styles.profileText}>
+                          Role : {roleName || "-"}
+                        </Text>
+                        <Text style={styles.profileText}>
+                          Last Login : {formatSimpleHtmlText(lastLoginTime)}
+                        </Text>
+                        <Text style={styles.profileText}>
+                          Last Logout : {formatSimpleHtmlText(lastLogoutTime)}
+                        </Text>
+                        <Text style={styles.profileText}>
+                          Last Failure Attempt :{" "}
+                          {formatSimpleHtmlText(lastFailureAttemptTime)}
+                        </Text>
+                        {!!loginLocation && roleId === 1 && (
+                          <Text style={styles.profileText}>
+                            Login Location : {loginLocation}
+                          </Text>
+                        )}
+                      </View>,
+                    ),
+                  )
+                }
+              >
+                <Icon name="user" size={18} color="#111827" />
+                <Text style={styles.profileMenuText}>Profile</Text>
+              </TouchableOpacity>
 
-          {/* CHILD SCREEN CONTENT */}
-          {selectedChild && (
-            <View style={styles.contentContainer}>
-              <View style={styles.contentHeader}>
-                <Text style={styles.contentTitle}>
-                  {selectedChild.menuitemname_c}
-                </Text>
-              </View>
+              <TouchableOpacity
+                style={styles.profileMenuItem}
+                onPress={openLogoutPopup}
+              >
+                <Icon name="log-out" size={18} color="#DC2626" />
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
             </View>
           )}
-          <View style={styles.childrenWrapper}>{children}</View>
-        </ScrollView>
 
-        {/* BOTTOM NAV */}
-        {/* <View style={styles.bottomNav}>
-          <TouchableOpacity style={styles.navItem}>
-            <Ionicons name="home" size={22} color="#fff" />
-            <Text style={styles.navLabel}>Home</Text>
-          </TouchableOpacity>
+          <UserMessage />
 
-          <TouchableOpacity style={styles.navItem}>
-            <Ionicons name="chatbox-ellipses" size={22} color="#fff" />
-            <Text style={styles.navLabel}>Grievance</Text>
-          </TouchableOpacity>
+          {/* BODY - Use ScrollView with proper contentContainerStyle */}
+          <ScrollView 
+            style={styles.bodyScrollView}
+            contentContainerStyle={styles.bodyContentContainer}
+            showsVerticalScrollIndicator={true}
+          >
+            {(selectedParent || selectedChild) && (
+              <TouchableOpacity
+                style={styles.backBtn}
+                onPress={selectedChild ? goBackToChildren : goBackToDashboard}
+              >
+                <Ionicons name="arrow-back" size={18} color="#fff" />
+                <Text style={styles.backBtnText}>{getBackButtonText()}</Text>
+              </TouchableOpacity>
+            )}
 
-          <TouchableOpacity style={styles.centerButton}>
-            <Ionicons name="grid" size={28} color="#fff" />
-          </TouchableOpacity>
+            {selectedChild && (
+              <View style={styles.selectedItemContainer}>
+                <Text style={styles.selectedItemLabel}>
+                  {getCurrentSelectionType()}:
+                </Text>
+                <Text style={styles.selectedItemName}>
+                  {getCurrentSelectionName()}
+                </Text>
+              </View>
+            )}
 
-          <TouchableOpacity style={styles.navItem}>
-            <Ionicons name="notifications" size={22} color="#fff" />
-            <Text style={styles.navLabel}>Alerts</Text>
-          </TouchableOpacity>
+            {selectedParent && !selectedChild && (
+              <>
+                <View style={styles.parentHeaderCard}>
+                  <Text style={styles.parentHeaderText}>
+                    {selectedParent.menuitemname}
+                  </Text>
+                </View>
 
-          <TouchableOpacity style={styles.navItem}>
-            <Ionicons name="settings" size={22} color="#fff" />
-            <Text style={styles.navLabel}>Settings</Text>
-          </TouchableOpacity>
-        </View> */}
-      </View>
+                <View style={styles.childrenGrid}>
+                  {selectedParent?.childs?.map((child, index) => {
+                    const hasSubChildren =
+                      child.childs && child.childs.length > 0;
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={styles.childCard}
+                        onPress={() => handleChildPress(child)}
+                        activeOpacity={0.85}
+                      >
+                        <View style={styles.childLeft}>
+                          <View style={styles.childIcon}>
+                            <Ionicons
+                              name={
+                                hasSubChildren
+                                  ? "folder-open"
+                                  : "chevron-forward"
+                              }
+                              size={16}
+                              color="#4F46E5"
+                            />
+                          </View>
+                          <Text style={styles.childText} numberOfLines={2}>
+                            {child.menuitemname_c}
+                          </Text>
+                        </View>
+                        {hasSubChildren ? (
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color="#94A3B8"
+                          />
+                        ) : (
+                          <Ionicons
+                            name="open-outline"
+                            size={18}
+                            color="#94A3B8"
+                          />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
+
+            {selectedChild && (
+              <View style={styles.childrenWrapper}>{children}</View>
+            )}
+
+            {!selectedParent && !selectedChild && (
+              <View style={styles.childrenWrapper}>{children}</View>
+            )}
+            
+            {/* Add extra bottom padding to ensure content isn't cut off */}
+            <View style={styles.bottomSpacer} />
+          </ScrollView>
+        </View>
+      </ToastProvider>
       
-</ToastProvider>
-      {/* LOGOUT CONFIRMATION MODAL */}
       <Modal
         visible={logoutVisible}
         transparent={true}
@@ -605,7 +734,6 @@ const SiteLayout = ({
           </View>
         </View>
       </Modal>
-      
     </SafeAreaView>
   );
 };
@@ -630,6 +758,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    minHeight: 60,
   },
 
   headerLeft: {
@@ -688,7 +817,6 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
 
-  // Sidebar Styles
   sidebarOverlay: {
     flex: 1,
     flexDirection: "row",
@@ -704,10 +832,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#0F172A",
     height: "100%",
     paddingTop: 20,
-    position: 'absolute',
-  left: 0,
-  top: 0,
-  bottom: 0,
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
   },
 
   sidebarHeader: {
@@ -864,10 +992,15 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  body: {
+  bodyScrollView: {
     flex: 1,
+  },
+
+  bodyContentContainer: {
     paddingHorizontal: 14,
     paddingTop: 14,
+    paddingBottom: 40, // Increased bottom padding
+    flexGrow: 1,
   },
 
   sectionTitle: {
@@ -907,6 +1040,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
+    minHeight: 60, // Ensure minimum height for touch targets
   },
 
   childLeft: {
@@ -971,6 +1105,12 @@ const styles = StyleSheet.create({
 
   childrenWrapper: {
     minHeight: 200,
+    marginTop: -16,
+    paddingBottom: 20,
+  },
+
+  bottomSpacer: {
+    height: 30, // Extra space at the bottom
   },
 
   modalTitle: {
