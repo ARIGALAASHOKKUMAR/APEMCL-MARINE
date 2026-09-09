@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,13 +11,11 @@ import {
   ActivityIndicator,
   Image,
   Linking,
-  FlatList,
   Platform,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import moment from "moment";
 import Icon from "react-native-vector-icons/Ionicons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Picker } from "@react-native-picker/picker";
@@ -26,12 +24,8 @@ import {
   ANALYSISREPORTS,
   ASSIGNDISCHARGEDUTY,
   commonAPICall,
-  CONTEXT_HEADING,
-  DISCHARGEFILTERFLAG,
   DISCHARGENOTICE,
-  MARINEDISCHARGEDETAILS,
   TEAMLEADERDETAILS,
-  UPLOADANALYSISREPORT,
 } from "../utils/utils";
 import ImageBucketRN from "../utils/ImageBucketRN";
 
@@ -1020,34 +1014,34 @@ const AnalysisReport = () => {
                   <Text style={styles.assignButtonText}>Assign Duty</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity
-                style={[
-                  styles.noticeButton,
-                  !hasInvalidParameter && styles.noticeButtonDisabled,
-                ]}
-                onPress={() => {
-                  if (hasInvalidParameter) {
-                    setShowNoticeModal(true);
-                    setRowData(item);
-                    noticeFormik.resetForm();
-                  }
-                }}
-                disabled={!hasInvalidParameter}
-              >
-                <Icon
-                  name="notifications-outline"
-                  size={14}
-                  color={!hasInvalidParameter ? "#999" : "#000"}
-                />
-                <Text
-                  style={[
-                    styles.noticeButtonText,
-                    !hasInvalidParameter && styles.noticeButtonTextDisabled,
-                  ]}
-                >
-                  Notice
-                </Text>
-              </TouchableOpacity>
+             <TouchableOpacity
+  style={[
+    styles.noticeButton,
+    (!hasInvalidParameter || isAssigned) && styles.noticeButtonDisabled,
+  ]}
+  onPress={() => {
+    if (hasInvalidParameter && !isAssigned) {
+      setShowNoticeModal(true);
+      setRowData(item);
+      noticeFormik.resetForm();
+    }
+  }}
+  disabled={!hasInvalidParameter || isAssigned}
+>
+  <Icon
+    name="notifications-outline"
+    size={14}
+    color={(!hasInvalidParameter || isAssigned) ? "#999" : "#000"}
+  />
+  <Text
+    style={[
+      styles.noticeButtonText,
+      (!hasInvalidParameter || isAssigned) && styles.noticeButtonTextDisabled,
+    ]}
+  >
+    Notice
+  </Text>
+</TouchableOpacity>
             </View>
           )}
         </View>
