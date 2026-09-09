@@ -31,6 +31,7 @@ import {
 } from "../utils/utils";
 import moment from "moment";
 import ImageBucketRN from "../utils/ImageBucketRN";
+import RegistrationPayment from "./RegistrationPayment";
 
 const { width, height } = Dimensions.get("window");
 
@@ -167,16 +168,16 @@ function EffluentPipelineDischarge() {
           .split(".")
           .map(Number);
         const regex = new RegExp(
-          `^\\d{${beforeDecimal}}\\.\\d{${afterDecimal}}$`
+          `^\\d{${beforeDecimal}}\\.\\d{${afterDecimal}}$`,
         );
         return schema.matches(
           regex,
-          `Format must be ${"0".repeat(beforeDecimal)}.${"0".repeat(afterDecimal)}`
+          `Format must be ${"0".repeat(beforeDecimal)}.${"0".repeat(afterDecimal)}`,
         );
       }),
     startReadingRemarks: Yup.string().max(
       500,
-      "Remarks cannot exceed 500 characters"
+      "Remarks cannot exceed 500 characters",
     ),
     ph: Yup.string()
       .required("required")
@@ -260,11 +261,11 @@ function EffluentPipelineDischarge() {
               .split(".")
               .map(Number);
             const regex = new RegExp(
-              `^\\d{${beforeDecimal}}\\.\\d{${afterDecimal}}$`
+              `^\\d{${beforeDecimal}}\\.\\d{${afterDecimal}}$`,
             );
             updatedSchema = updatedSchema.matches(
               regex,
-              `Format must be ${"0".repeat(beforeDecimal)}.${"0".repeat(afterDecimal)}`
+              `Format must be ${"0".repeat(beforeDecimal)}.${"0".repeat(afterDecimal)}`,
             );
           }
           updatedSchema = updatedSchema.test(
@@ -274,10 +275,10 @@ function EffluentPipelineDischarge() {
               const startReading = Number(selectedRow?.start_reading || 0);
               if (!value) return true;
               return Number(value) > startReading;
-            }
+            },
           );
           return updatedSchema;
-        }
+        },
       ),
   });
 
@@ -298,7 +299,7 @@ function EffluentPipelineDischarge() {
         .positive("Quantity must be positive")
         .max(
           detailedData?.quantity_ready_for_disposal || 0,
-          `Quantity cannot exceed ${detailedData?.quantity_ready_for_disposal || 0} Tonnes`
+          `Quantity cannot exceed ${detailedData?.quantity_ready_for_disposal || 0} Tonnes`,
         ),
       receiverPh: Yup.number()
         .typeError("TDS must be a number")
@@ -432,7 +433,7 @@ function EffluentPipelineDischarge() {
         FLOWMETERREADINGPOST,
         finalPayload,
         "POST",
-        dispatch
+        dispatch,
       );
       if (res.status === 200) {
         Alert.alert("Success", "Reading submitted successfully");
@@ -491,14 +492,14 @@ function EffluentPipelineDischarge() {
           EFFPIPELINEDISCHARGEDETAILS,
           {},
           "GET",
-          dispatch
+          dispatch,
         );
       } else {
         res = await commonAPICall(
           EFFPIPELINEDISCHARGEDETAILSREC,
           {},
           "GET",
-          dispatch
+          dispatch,
         );
       }
       if (res.status === 200) {
@@ -532,13 +533,13 @@ function EffluentPipelineDischarge() {
           Object.values(item).some(
             (value) =>
               value &&
-              value.toString().toLowerCase().includes(text.toLowerCase())
-          )
+              value.toString().toLowerCase().includes(text.toLowerCase()),
+          ),
         );
         setFilteredData(filtered);
       }
     },
-    [data]
+    [data],
   );
 
   // Refresh
@@ -667,11 +668,15 @@ function EffluentPipelineDischarge() {
                         {detailedData.industry_name}
                       </Text>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>District - State:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          District - State:
+                        </Text>{" "}
                         {detailedData.dist_name} - {detailedData.state_name}
                       </Text>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Industry Address:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          Industry Address:
+                        </Text>{" "}
                         {detailedData.industry_location_address}
                       </Text>
                       <Text style={styles.detailText}>
@@ -679,11 +684,15 @@ function EffluentPipelineDischarge() {
                         {detailedData.pin_code}
                       </Text>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Authorized Person:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          Authorized Person:
+                        </Text>{" "}
                         {detailedData.authorized_person}
                       </Text>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Authorized Email:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          Authorized Email:
+                        </Text>{" "}
                         {detailedData.authorized_person_email}
                       </Text>
                       <Text style={styles.detailText}>
@@ -695,11 +704,15 @@ function EffluentPipelineDischarge() {
                         {detailedData.activity}
                       </Text>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Correspondence Address:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          Correspondence Address:
+                        </Text>{" "}
                         {detailedData.correspondence_address}
                       </Text>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Authorized Mobile:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          Authorized Mobile:
+                        </Text>{" "}
                         {detailedData.authorized_person_mobile}
                       </Text>
                     </View>
@@ -723,7 +736,9 @@ function EffluentPipelineDischarge() {
                         {detailedData.ph}
                       </Text>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Quantity for Disposal:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          Quantity for Disposal:
+                        </Text>{" "}
                         {detailedData.disposal_quantity}
                       </Text>
                       <Text style={styles.detailText}>
@@ -799,13 +814,17 @@ function EffluentPipelineDischarge() {
                   <View style={styles.detailSection}>
                     <View style={styles.sectionHeader}>
                       <Icon name="business-outline" size={18} color="#2e7d32" />
-                      <Text style={styles.sectionTitle}>Effluent Waste Details</Text>
+                      <Text style={styles.sectionTitle}>
+                        Effluent Waste Details
+                      </Text>
                     </View>
                     <View style={styles.detailCard}>
                       <View style={styles.row}>
                         <View style={styles.col4}>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Waste Details:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Waste Details:
+                            </Text>{" "}
                             {paymentData?.effluent_type}
                           </Text>
                           <Text style={styles.detailText}>
@@ -819,7 +838,9 @@ function EffluentPipelineDischarge() {
                         </View>
                         <View style={styles.col4}>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Quantity for Disposal:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Quantity for Disposal:
+                            </Text>{" "}
                             {paymentData?.disposal_quantity}
                           </Text>
                           <Text style={styles.detailText}>
@@ -827,7 +848,9 @@ function EffluentPipelineDischarge() {
                             {paymentData.generator_tds}
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Receiver TDS:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Receiver TDS:
+                            </Text>{" "}
                             {paymentData.receiver_tds}
                           </Text>
                         </View>
@@ -837,7 +860,9 @@ function EffluentPipelineDischarge() {
                             {paymentData.generator_nh3}
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Receiver NH3:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Receiver NH3:
+                            </Text>{" "}
                             {paymentData.receiver_nh3}
                           </Text>
                           <Text style={styles.detailText}>
@@ -845,7 +870,9 @@ function EffluentPipelineDischarge() {
                             {paymentData.generator_cod}
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Receiver COD:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Receiver COD:
+                            </Text>{" "}
                             {paymentData.receiver_cod}
                           </Text>
                         </View>
@@ -857,11 +884,15 @@ function EffluentPipelineDischarge() {
                   <View style={styles.detailSection}>
                     <View style={styles.sectionHeader}>
                       <Icon name="list" size={18} color="#2e7d32" />
-                      <Text style={styles.sectionTitle}>Effluent Discharge List</Text>
+                      <Text style={styles.sectionTitle}>
+                        Effluent Discharge List
+                      </Text>
                     </View>
                     <View style={styles.detailCard}>
                       <Text style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Date of Discharge:</Text>{" "}
+                        <Text style={styles.detailLabel}>
+                          Date of Discharge:
+                        </Text>{" "}
                         {paymentData.disposal_date || "-"}
                       </Text>
                       <View style={styles.row}>
@@ -885,11 +916,15 @@ function EffluentPipelineDischarge() {
                         </View>
                         <View style={styles.col4}>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Start Reading:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Start Reading:
+                            </Text>{" "}
                             {paymentData.start_reading || "-"}
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Start Reading IP:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Start Reading IP:
+                            </Text>{" "}
                             {paymentData.start_reading_ip_address || "-"}
                           </Text>
                         </View>
@@ -899,22 +934,30 @@ function EffluentPipelineDischarge() {
                             {paymentData.end_reading || "-"}
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>End Reading IP:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              End Reading IP:
+                            </Text>{" "}
                             {paymentData.end_reading_ip_address || "-"}
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Total Volume:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Total Volume:
+                            </Text>{" "}
                             {paymentData.total_volume || "-"}
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Payment Status:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Payment Status:
+                            </Text>{" "}
                             <StatusBadge
                               status={paymentData?.payment_status}
                               paymentStatus={true}
                             />
                           </Text>
                           <Text style={styles.detailText}>
-                            <Text style={styles.detailLabel}>Effluent Type:</Text>{" "}
+                            <Text style={styles.detailLabel}>
+                              Effluent Type:
+                            </Text>{" "}
                             {paymentData?.effluent_type || "-"}
                           </Text>
                         </View>
@@ -926,13 +969,13 @@ function EffluentPipelineDischarge() {
                   <View style={styles.detailSection}>
                     <View style={styles.sectionHeader}>
                       <Icon name="card-outline" size={18} color="#2e7d32" />
-                      <Text style={styles.sectionTitle}>Payment Confirmation</Text>
-                    </View>
-                    <View style={styles.detailCard}>
-                      <Text style={styles.paymentPlaceholder}>
-                        Payment details would be rendered here
+                      <Text style={styles.sectionTitle}>
+                        Payment Confirmation
                       </Text>
                     </View>
+                    {/* <View style={styles.detailCard}> */}
+                      <RegistrationPayment type="EFFLUENT_PIPELINE_PAYMENT" />
+                    {/* </View> */}
                   </View>
                 </View>
               </View>
@@ -996,7 +1039,9 @@ function EffluentPipelineDischarge() {
                     {/* Accept Fields */}
                     {accept && (
                       <>
-                        <Text style={styles.sectionSubtitle}>Parameters Values</Text>
+                        <Text style={styles.sectionSubtitle}>
+                          Parameters Values
+                        </Text>
                         <View style={styles.row}>
                           <View style={styles.col6}>
                             <Text style={styles.label}>
@@ -1011,11 +1056,12 @@ function EffluentPipelineDischarge() {
                               placeholder="Enter PH value"
                               placeholderTextColor="#999"
                             />
-                            {formik.errors.receiverPh && formik.touched.receiverPh && (
-                              <Text style={styles.errorText}>
-                                {formik.errors.receiverPh}
-                              </Text>
-                            )}
+                            {formik.errors.receiverPh &&
+                              formik.touched.receiverPh && (
+                                <Text style={styles.errorText}>
+                                  {formik.errors.receiverPh}
+                                </Text>
+                              )}
                           </View>
                           <View style={styles.col6}>
                             <Text style={styles.label}>
@@ -1030,11 +1076,12 @@ function EffluentPipelineDischarge() {
                               placeholder="Enter TDS value"
                               placeholderTextColor="#999"
                             />
-                            {formik.errors.receiverTds && formik.touched.receiverTds && (
-                              <Text style={styles.errorText}>
-                                {formik.errors.receiverTds}
-                              </Text>
-                            )}
+                            {formik.errors.receiverTds &&
+                              formik.touched.receiverTds && (
+                                <Text style={styles.errorText}>
+                                  {formik.errors.receiverTds}
+                                </Text>
+                              )}
                           </View>
                         </View>
 
@@ -1052,11 +1099,12 @@ function EffluentPipelineDischarge() {
                               placeholder="Enter NH3 value"
                               placeholderTextColor="#999"
                             />
-                            {formik.errors.receiverNh3 && formik.touched.receiverNh3 && (
-                              <Text style={styles.errorText}>
-                                {formik.errors.receiverNh3}
-                              </Text>
-                            )}
+                            {formik.errors.receiverNh3 &&
+                              formik.touched.receiverNh3 && (
+                                <Text style={styles.errorText}>
+                                  {formik.errors.receiverNh3}
+                                </Text>
+                              )}
                           </View>
                           <View style={styles.col6}>
                             <Text style={styles.label}>
@@ -1071,11 +1119,12 @@ function EffluentPipelineDischarge() {
                               placeholder="Enter COD value"
                               placeholderTextColor="#999"
                             />
-                            {formik.errors.receiverCod && formik.touched.receiverCod && (
-                              <Text style={styles.errorText}>
-                                {formik.errors.receiverCod}
-                              </Text>
-                            )}
+                            {formik.errors.receiverCod &&
+                              formik.touched.receiverCod && (
+                                <Text style={styles.errorText}>
+                                  {formik.errors.receiverCod}
+                                </Text>
+                              )}
                           </View>
                         </View>
                       </>
@@ -1182,7 +1231,7 @@ function EffluentPipelineDischarge() {
                     <Text style={styles.loadingText}>Loading...</Text>
                   </View>
                 ) : filteredData.length > 0 ? (
-                  <ScrollView 
+                  <ScrollView
                     style={styles.cardListContainer}
                     showsVerticalScrollIndicator={false}
                   >
@@ -1191,7 +1240,9 @@ function EffluentPipelineDischarge() {
                         {/* Card Header with S.No and Status */}
                         <View style={styles.itemCardHeader}>
                           <View style={styles.itemCardNumber}>
-                            <Text style={styles.itemCardNumberText}>{index + 1}</Text>
+                            <Text style={styles.itemCardNumberText}>
+                              {index + 1}
+                            </Text>
                           </View>
                           <StatusBadge
                             status={item?.payment_status}
@@ -1210,7 +1261,9 @@ function EffluentPipelineDischarge() {
                               </Text>
                             </View>
                             <View style={styles.itemCardCol6}>
-                              <Text style={styles.itemCardLabel}>Type of Waste</Text>
+                              <Text style={styles.itemCardLabel}>
+                                Type of Waste
+                              </Text>
                               <Text style={styles.itemCardValue}>
                                 {item?.type_of_waste || "-"}
                               </Text>
@@ -1220,11 +1273,15 @@ function EffluentPipelineDischarge() {
                           {/* Row 2: Name of Effluent & Status */}
                           <View style={styles.itemCardRow}>
                             <View style={styles.itemCardCol6}>
-                              <Text style={styles.itemCardLabel}>Name of Effluent</Text>
+                              <Text style={styles.itemCardLabel}>
+                                Name of Effluent
+                              </Text>
                               <Text style={styles.itemCardValue}>
-                                {item?.effluent_type === "1" ? "HTDS" : 
-                                 item?.effluent_type === "2" ? "LTDS" : 
-                                 item?.effluent_type || "-"}
+                                {item?.effluent_type === "1"
+                                  ? "HTDS"
+                                  : item?.effluent_type === "2"
+                                    ? "LTDS"
+                                    : item?.effluent_type || "-"}
                               </Text>
                             </View>
                             <View style={styles.itemCardCol6}>
@@ -1238,13 +1295,17 @@ function EffluentPipelineDischarge() {
                           {/* Row 3: Start Reading & End Reading */}
                           <View style={styles.itemCardRow}>
                             <View style={styles.itemCardCol6}>
-                              <Text style={styles.itemCardLabel}>Start Reading</Text>
+                              <Text style={styles.itemCardLabel}>
+                                Start Reading
+                              </Text>
                               <Text style={styles.itemCardValue}>
                                 {item?.start_reading || "-"}
                               </Text>
                             </View>
                             <View style={styles.itemCardCol6}>
-                              <Text style={styles.itemCardLabel}>End Reading</Text>
+                              <Text style={styles.itemCardLabel}>
+                                End Reading
+                              </Text>
                               <Text style={styles.itemCardValue}>
                                 {item?.end_reading || "-"}
                               </Text>
@@ -1256,11 +1317,15 @@ function EffluentPipelineDischarge() {
                             <View style={styles.itemCardCol6}>
                               <Text style={styles.itemCardLabel}>Qty (KL)</Text>
                               <Text style={styles.itemCardValue}>
-                                {item?.total_volume ? Number(item.total_volume).toFixed(2) : "-"}
+                                {item?.total_volume
+                                  ? Number(item.total_volume).toFixed(2)
+                                  : "-"}
                               </Text>
                             </View>
                             <View style={styles.itemCardCol6}>
-                              <Text style={styles.itemCardLabel}>Payment Status</Text>
+                              <Text style={styles.itemCardLabel}>
+                                Payment Status
+                              </Text>
                               <StatusBadge
                                 status={item?.payment_status}
                                 paymentStatus={true}
@@ -1277,7 +1342,9 @@ function EffluentPipelineDischarge() {
                               onPress={() => handleManifestRedirect(item)}
                             >
                               <Icon name="folder-open" size={16} color="#fff" />
-                              <Text style={styles.detailsButtonText}>Details</Text>
+                              <Text style={styles.detailsButtonText}>
+                                Details
+                              </Text>
                             </TouchableOpacity>
                           ) : (
                             <TouchableOpacity
@@ -1356,7 +1423,9 @@ function EffluentPipelineDischarge() {
                 <View style={styles.readingCard}>
                   {/* Header */}
                   <View style={styles.readingHeader}>
-                    <Text style={styles.readingSectionTitle}>Effluent Waste Details</Text>
+                    <Text style={styles.readingSectionTitle}>
+                      Effluent Waste Details
+                    </Text>
                     <View style={styles.readingDateBox}>
                       <Icon name="calendar" size={14} color="#1e3a5f" />
                       <Text style={styles.readingDateText}>
@@ -1368,19 +1437,25 @@ function EffluentPipelineDischarge() {
                   {/* Details Row - Mobile optimized */}
                   <View style={styles.readingDetailsRow}>
                     <View style={styles.readingDetailItem}>
-                      <Text style={styles.readingDetailLabel}>Permitted Disposal Option:</Text>
+                      <Text style={styles.readingDetailLabel}>
+                        Permitted Disposal Option:
+                      </Text>
                       <Text style={styles.readingDetailValue}>
                         {selectedRow?.effluent_permitted_disposal_option || "-"}
                       </Text>
                     </View>
                     <View style={styles.readingDetailItem}>
-                      <Text style={styles.readingDetailLabel}>CETP Membership:</Text>
+                      <Text style={styles.readingDetailLabel}>
+                        CETP Membership:
+                      </Text>
                       <Text style={styles.readingDetailValue}>
                         {selectedRow?.cetp || "-"}
                       </Text>
                     </View>
                     <View style={styles.readingDetailItem}>
-                      <Text style={styles.readingDetailLabel}>Mode of Conveyance:</Text>
+                      <Text style={styles.readingDetailLabel}>
+                        Mode of Conveyance:
+                      </Text>
                       <Text style={styles.readingDetailValue}>
                         {selectedRow?.mode_name || "-"}
                       </Text>
@@ -1398,9 +1473,14 @@ function EffluentPipelineDischarge() {
                         <View>
                           <View style={styles.readingRow}>
                             <View style={styles.readingCol12}>
-                              <Text style={styles.readingLabel}>Type of Waste</Text>
+                              <Text style={styles.readingLabel}>
+                                Type of Waste
+                              </Text>
                               <TextInput
-                                style={[styles.readingInput, styles.readingInputDisabled]}
+                                style={[
+                                  styles.readingInput,
+                                  styles.readingInputDisabled,
+                                ]}
                                 value={startFormik.values.wasteType}
                                 editable={false}
                               />
@@ -1409,17 +1489,29 @@ function EffluentPipelineDischarge() {
 
                           <View style={styles.readingRow}>
                             <View style={styles.readingCol6}>
-                              <Text style={styles.readingLabel}>Flow Meter Format</Text>
+                              <Text style={styles.readingLabel}>
+                                Flow Meter Format
+                              </Text>
                               <CustomDropdown
                                 options={flowMeterFormat}
-                                selectedValue={startFormik.values.flowMeterFormat}
-                                onSelect={(value) => startFormik.setFieldValue("flowMeterFormat", value)}
+                                selectedValue={
+                                  startFormik.values.flowMeterFormat
+                                }
+                                onSelect={(value) =>
+                                  startFormik.setFieldValue(
+                                    "flowMeterFormat",
+                                    value,
+                                  )
+                                }
                                 disabled={editFlag && !startEditFlag}
                                 placeholder="Select"
                               />
-                              {startFormik.errors.flowMeterFormat && startFormik.touched.flowMeterFormat && (
-                                <Text style={styles.readingError}>{startFormik.errors.flowMeterFormat}</Text>
-                              )}
+                              {startFormik.errors.flowMeterFormat &&
+                                startFormik.touched.flowMeterFormat && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.flowMeterFormat}
+                                  </Text>
+                                )}
                             </View>
                             <View style={styles.readingCol6}>
                               <Text style={styles.readingLabel}>
@@ -1431,23 +1523,39 @@ function EffluentPipelineDischarge() {
                                     style={styles.editIcon}
                                     onPress={() => setStartEditFlag(true)}
                                   >
-                                    <Icon name="create" size={16} color="#1e3a5f" />
+                                    <Icon
+                                      name="create"
+                                      size={16}
+                                      color="#1e3a5f"
+                                    />
                                   </TouchableOpacity>
                                 )}
                                 <TextInput
-                                  style={[styles.readingInput, editFlag && !startEditFlag && styles.readingInputDisabled]}
+                                  style={[
+                                    styles.readingInput,
+                                    editFlag &&
+                                      !startEditFlag &&
+                                      styles.readingInputDisabled,
+                                  ]}
                                   value={startFormik.values.startReading}
-                                  onChangeText={startFormik.handleChange("startReading")}
-                                  onBlur={startFormik.handleBlur("startReading")}
+                                  onChangeText={startFormik.handleChange(
+                                    "startReading",
+                                  )}
+                                  onBlur={startFormik.handleBlur(
+                                    "startReading",
+                                  )}
                                   editable={!(editFlag && !startEditFlag)}
                                   maxLength={9}
                                   placeholder="Enter Reading"
                                   placeholderTextColor="#999"
                                 />
                               </View>
-                              {startFormik.errors.startReading && startFormik.touched.startReading && (
-                                <Text style={styles.readingError}>{startFormik.errors.startReading}</Text>
-                              )}
+                              {startFormik.errors.startReading &&
+                                startFormik.touched.startReading && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.startReading}
+                                  </Text>
+                                )}
                             </View>
                           </View>
 
@@ -1455,10 +1563,17 @@ function EffluentPipelineDischarge() {
                             <View style={styles.readingCol12}>
                               <Text style={styles.readingLabel}>Remarks</Text>
                               <TextInput
-                                style={[styles.readingInput, styles.readingTextArea]}
+                                style={[
+                                  styles.readingInput,
+                                  styles.readingTextArea,
+                                ]}
                                 value={startFormik.values.startReadingRemarks}
-                                onChangeText={startFormik.handleChange("startReadingRemarks")}
-                                onBlur={startFormik.handleBlur("startReadingRemarks")}
+                                onChangeText={startFormik.handleChange(
+                                  "startReadingRemarks",
+                                )}
+                                onBlur={startFormik.handleBlur(
+                                  "startReadingRemarks",
+                                )}
                                 editable={!(editFlag && !startEditFlag)}
                                 maxLength={100}
                                 placeholder="Enter remarks (optional)"
@@ -1466,9 +1581,12 @@ function EffluentPipelineDischarge() {
                                 multiline={true}
                                 numberOfLines={2}
                               />
-                              {startFormik.errors.startReadingRemarks && startFormik.touched.startReadingRemarks && (
-                                <Text style={styles.readingError}>{startFormik.errors.startReadingRemarks}</Text>
-                              )}
+                              {startFormik.errors.startReadingRemarks &&
+                                startFormik.touched.startReadingRemarks && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.startReadingRemarks}
+                                  </Text>
+                                )}
                             </View>
                           </View>
 
@@ -1487,9 +1605,12 @@ function EffluentPipelineDischarge() {
                                 placeholder="0-14"
                                 placeholderTextColor="#999"
                               />
-                              {startFormik.errors.ph && startFormik.touched.ph && (
-                                <Text style={styles.readingError}>{startFormik.errors.ph}</Text>
-                              )}
+                              {startFormik.errors.ph &&
+                                startFormik.touched.ph && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.ph}
+                                  </Text>
+                                )}
                             </View>
                             <View style={styles.readingCol6}>
                               <Text style={styles.readingLabel}>
@@ -1505,9 +1626,12 @@ function EffluentPipelineDischarge() {
                                 placeholder="Enter TDS"
                                 placeholderTextColor="#999"
                               />
-                              {startFormik.errors.tds && startFormik.touched.tds && (
-                                <Text style={styles.readingError}>{startFormik.errors.tds}</Text>
-                              )}
+                              {startFormik.errors.tds &&
+                                startFormik.touched.tds && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.tds}
+                                  </Text>
+                                )}
                             </View>
                           </View>
 
@@ -1526,9 +1650,12 @@ function EffluentPipelineDischarge() {
                                 placeholder="Enter NH3"
                                 placeholderTextColor="#999"
                               />
-                              {startFormik.errors.nh3 && startFormik.touched.nh3 && (
-                                <Text style={styles.readingError}>{startFormik.errors.nh3}</Text>
-                              )}
+                              {startFormik.errors.nh3 &&
+                                startFormik.touched.nh3 && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.nh3}
+                                  </Text>
+                                )}
                             </View>
                             <View style={styles.readingCol6}>
                               <Text style={styles.readingLabel}>
@@ -1544,16 +1671,20 @@ function EffluentPipelineDischarge() {
                                 placeholder="Enter COD"
                                 placeholderTextColor="#999"
                               />
-                              {startFormik.errors.cod && startFormik.touched.cod && (
-                                <Text style={styles.readingError}>{startFormik.errors.cod}</Text>
-                              )}
+                              {startFormik.errors.cod &&
+                                startFormik.touched.cod && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.cod}
+                                  </Text>
+                                )}
                             </View>
                           </View>
 
                           <View style={styles.readingRow}>
                             <View style={styles.readingCol12}>
                               <Text style={styles.readingLabel}>
-                                Upload Reading Image {editFlag && <Text style={styles.star}>*</Text>}
+                                Upload Reading Image{" "}
+                                {editFlag && <Text style={styles.star}>*</Text>}
                               </Text>
                               <TouchableOpacity
                                 style={styles.uploadButton}
@@ -1565,17 +1696,26 @@ function EffluentPipelineDischarge() {
                                     "startReadingImage",
                                     20971520,
                                     "camera",
-                                    dispatch
+                                    dispatch,
                                   );
                                 }}
                                 disabled={editFlag && !startEditFlag}
                               >
-                                <Icon name="cloud-upload" size={20} color="#2e7d32" />
-                                <Text style={styles.uploadButtonText}>Choose File</Text>
+                                <Icon
+                                  name="cloud-upload"
+                                  size={20}
+                                  color="#2e7d32"
+                                />
+                                <Text style={styles.uploadButtonText}>
+                                  Choose File
+                                </Text>
                               </TouchableOpacity>
-                              {startFormik.errors.startReadingImage && startFormik.touched.startReadingImage && (
-                                <Text style={styles.readingError}>{startFormik.errors.startReadingImage}</Text>
-                              )}
+                              {startFormik.errors.startReadingImage &&
+                                startFormik.touched.startReadingImage && (
+                                  <Text style={styles.readingError}>
+                                    {startFormik.errors.startReadingImage}
+                                  </Text>
+                                )}
                               <Text style={styles.uploadNote}>
                                 Allowed: JPEG, PNG, JPG (Max 5MB)
                               </Text>
@@ -1592,8 +1732,14 @@ function EffluentPipelineDischarge() {
                       {/* Start Reading Details */}
                       <View>
                         <Text style={styles.readingSectionSubtitle}>
-                          <Icon name="information-circle" size={16} color="#2e7d32" />
-                          <Text style={{ marginLeft: 8 }}>Start Reading Details</Text>
+                          <Icon
+                            name="information-circle"
+                            size={16}
+                            color="#2e7d32"
+                          />
+                          <Text style={{ marginLeft: 8 }}>
+                            Start Reading Details
+                          </Text>
                         </Text>
                         <View style={styles.readingDetailsGrid}>
                           <View style={styles.readingDetailGridItem}>
@@ -1603,7 +1749,9 @@ function EffluentPipelineDischarge() {
                             </Text>
                           </View>
                           <View style={styles.readingDetailGridItem}>
-                            <Text style={styles.readingDetailLabel}>Officer:</Text>
+                            <Text style={styles.readingDetailLabel}>
+                              Officer:
+                            </Text>
                             <Text style={styles.readingDetailValue}>
                               {state?.username || "-"}
                             </Text>
@@ -1621,7 +1769,9 @@ function EffluentPipelineDischarge() {
                             </Text>
                           </View>
                           <View style={styles.readingDetailGridItem}>
-                            <Text style={styles.readingDetailLabel}>Start Reading:</Text>
+                            <Text style={styles.readingDetailLabel}>
+                              Start Reading:
+                            </Text>
                             <Text style={styles.readingDetailValue}>
                               {selectedRow?.start_reading || "-"}
                             </Text>
@@ -1652,17 +1802,32 @@ function EffluentPipelineDischarge() {
                             <View style={styles.endReadingContainer}>
                               <View style={styles.endReadingField}>
                                 <Text style={styles.readingLabel}>
-                                  Flow Meter Format <Text style={styles.star}>*</Text>
+                                  Flow Meter Format{" "}
+                                  <Text style={styles.star}>*</Text>
                                 </Text>
                                 <CustomDropdown
                                   options={flowMeterFormat}
-                                  selectedValue={endFormik.values.endReadingFlowMeterFormat}
-                                  onSelect={(value) => endFormik.setFieldValue("endReadingFlowMeterFormat", value)}
+                                  selectedValue={
+                                    endFormik.values.endReadingFlowMeterFormat
+                                  }
+                                  onSelect={(value) =>
+                                    endFormik.setFieldValue(
+                                      "endReadingFlowMeterFormat",
+                                      value,
+                                    )
+                                  }
                                   placeholder="Select"
                                 />
-                                {endFormik.errors.endReadingFlowMeterFormat && endFormik.touched.endReadingFlowMeterFormat && (
-                                  <Text style={styles.readingError}>{endFormik.errors.endReadingFlowMeterFormat}</Text>
-                                )}
+                                {endFormik.errors.endReadingFlowMeterFormat &&
+                                  endFormik.touched
+                                    .endReadingFlowMeterFormat && (
+                                    <Text style={styles.readingError}>
+                                      {
+                                        endFormik.errors
+                                          .endReadingFlowMeterFormat
+                                      }
+                                    </Text>
+                                  )}
                               </View>
 
                               <View style={styles.endReadingField}>
@@ -1672,18 +1837,25 @@ function EffluentPipelineDischarge() {
                                 <TextInput
                                   style={styles.endReadingInput}
                                   value={endFormik.values.endReading}
-                                  onChangeText={endFormik.handleChange("endReading")}
+                                  onChangeText={endFormik.handleChange(
+                                    "endReading",
+                                  )}
                                   onBlur={endFormik.handleBlur("endReading")}
                                   placeholder="Enter Reading"
                                   placeholderTextColor="#999"
                                 />
-                                {endFormik.errors.endReading && endFormik.touched.endReading && (
-                                  <Text style={styles.readingError}>{endFormik.errors.endReading}</Text>
-                                )}
+                                {endFormik.errors.endReading &&
+                                  endFormik.touched.endReading && (
+                                    <Text style={styles.readingError}>
+                                      {endFormik.errors.endReading}
+                                    </Text>
+                                  )}
                               </View>
 
                               <View style={styles.endReadingField}>
-                                <Text style={styles.readingLabel}>Upload Image</Text>
+                                <Text style={styles.readingLabel}>
+                                  Upload Image
+                                </Text>
                                 <TouchableOpacity
                                   style={styles.uploadButton}
                                   onPress={() => {
@@ -1694,12 +1866,18 @@ function EffluentPipelineDischarge() {
                                       "endReadingImage",
                                       20971520,
                                       "camera",
-                                      dispatch
+                                      dispatch,
                                     );
                                   }}
                                 >
-                                  <Icon name="cloud-upload" size={16} color="#2e7d32" />
-                                  <Text style={styles.uploadButtonText}>Choose File</Text>
+                                  <Icon
+                                    name="cloud-upload"
+                                    size={16}
+                                    color="#2e7d32"
+                                  />
+                                  <Text style={styles.uploadButtonText}>
+                                    Choose File
+                                  </Text>
                                 </TouchableOpacity>
                                 <Text style={styles.uploadNote}>
                                   Allowed: JPEG, PNG, PDF (Max 5MB)
@@ -1709,24 +1887,39 @@ function EffluentPipelineDischarge() {
                               <View style={styles.endReadingField}>
                                 <Text style={styles.readingLabel}>Remarks</Text>
                                 <TextInput
-                                  style={[styles.endReadingInput, styles.endReadingTextArea]}
+                                  style={[
+                                    styles.endReadingInput,
+                                    styles.endReadingTextArea,
+                                  ]}
                                   value={endFormik.values.endReadingRemarks}
-                                  onChangeText={endFormik.handleChange("endReadingRemarks")}
-                                  onBlur={endFormik.handleBlur("endReadingRemarks")}
+                                  onChangeText={endFormik.handleChange(
+                                    "endReadingRemarks",
+                                  )}
+                                  onBlur={endFormik.handleBlur(
+                                    "endReadingRemarks",
+                                  )}
                                   placeholder="Enter remarks"
                                   placeholderTextColor="#999"
                                   multiline={true}
                                   numberOfLines={2}
                                 />
-                                {endFormik.errors.endReadingRemarks && endFormik.touched.endReadingRemarks && (
-                                  <Text style={styles.readingError}>{endFormik.errors.endReadingRemarks}</Text>
-                                )}
+                                {endFormik.errors.endReadingRemarks &&
+                                  endFormik.touched.endReadingRemarks && (
+                                    <Text style={styles.readingError}>
+                                      {endFormik.errors.endReadingRemarks}
+                                    </Text>
+                                  )}
                               </View>
 
                               <View style={styles.endReadingField}>
-                                <Text style={styles.readingLabel}>Total Volume</Text>
+                                <Text style={styles.readingLabel}>
+                                  Total Volume
+                                </Text>
                                 <TextInput
-                                  style={[styles.endReadingInput, styles.endReadingTotal]}
+                                  style={[
+                                    styles.endReadingInput,
+                                    styles.endReadingTotal,
+                                  ]}
                                   value={calculateTotalVolume() || ""}
                                   editable={false}
                                 />
@@ -1742,7 +1935,10 @@ function EffluentPipelineDischarge() {
 
               <View style={styles.readingModalFooter}>
                 <TouchableOpacity
-                  style={[styles.readingFooterButton, styles.readingSubmitButton]}
+                  style={[
+                    styles.readingFooterButton,
+                    styles.readingSubmitButton,
+                  ]}
                   onPress={() => {
                     if (isStartModal) {
                       startFormik.handleSubmit();
@@ -1755,7 +1951,10 @@ function EffluentPipelineDischarge() {
                   <Text style={styles.readingSubmitButtonText}>Submit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.readingFooterButton, styles.readingCloseButton]}
+                  style={[
+                    styles.readingFooterButton,
+                    styles.readingCloseButton,
+                  ]}
                   onPress={() => {
                     setShowStartModal(false);
                     setShowEndModal(false);

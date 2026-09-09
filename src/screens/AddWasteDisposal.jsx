@@ -1514,7 +1514,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    margin: 12,
+    margin: 10,
     backgroundColor: "#fff",
     borderRadius: 12,
     elevation: 3,
@@ -1772,7 +1772,7 @@ const styles = StyleSheet.create({
     padding: 16,
     width: "90%",
     maxHeight: "100%",
-    minHeight: 400,
+    minHeight: 500,
   },
   dropdownModalHeader: {
     flexDirection: "row",

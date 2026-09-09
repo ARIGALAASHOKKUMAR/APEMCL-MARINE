@@ -48,30 +48,30 @@ function GenApprovedList() {
   const stateData = route?.params?.state || {};
 
   useEffect(() => {
-    if (routeId === "1") {
-      navigation.navigate("TransportVehicleSelection", {
-        rowData: stateData?.rowData,
-        wasteList: stateData?.wasteList,
-      });
-    } else if (routeId === "2") {
-      navigation.navigate("RegistrationPayment", {
-        type: "MANIFEST_PAYMENT",
-        vehicleList: stateData?.data,
-        onPaymentComplete: () => {},
-      });
-    } else if (routeId === "3") {
-      navigation.navigate("ManifestConfirmation", {
-        wasteDisposalInterestId: wasteDisposalInterestId,
-        wasteDisposalId: wasteDisposalId,
-      });
-    } else if (routeId === "4") {
-      navigation.navigate("RejectedTransportVehicleSelection");
-    } else if (routeId === "transporters") {
-      navigation.navigate("TransportersList");
-    } else {
-      GetApprovedData();
-    }
-  }, [routeId]);
+  if (routeId === "1") {
+    navigation.replace("TransportVehicleSelection", {
+      rowData: stateData?.rowData,
+      wasteList: stateData?.wasteList,
+    });
+  } else if (routeId === "2") {
+    navigation.replace("RegistrationPayment", {
+      type: "MANIFEST_PAYMENT",
+      vehicleList: stateData?.data,
+      onPaymentComplete: () => {},
+    });
+  } else if (routeId === "3") {
+    navigation.replace("ManifestConfirmation", {
+      wasteDisposalInterestId: wasteDisposalInterestId,
+      wasteDisposalId: wasteDisposalId,
+    });
+  } else if (routeId === "4") {
+    navigation.replace("RejectedTransportVehicleSelection");
+  } else if (routeId === "transporters") {
+    navigation.replace("TransportersList");
+  } else {
+    GetApprovedData();
+  }
+}, [routeId]);
 
   useEffect(() => {
     if (route?.params?.paymentData) {
@@ -310,11 +310,11 @@ function GenApprovedList() {
         dispatch
       );
 
+      navigation.navigate("TransportVehicleSelection", {
+        rowData: rowData,
+        wasteList: wasteList,
+      });
       if (response.status === 200) {
-        navigation.navigate("TransportVehicleSelection", {
-          rowData: rowData,
-          wasteList: wasteList,
-        });
       }
     } catch (error) {
       console.error("Error in API call:", error);
@@ -482,12 +482,12 @@ function GenApprovedList() {
         </View>
 
         <View style={styles.itemCardFooter}>
-          {item.isProceeded ? (
+          {/* {item.isProceeded ? (
             <View style={styles.disabledButton}>
               <Icon name="checkmark-circle" size={14} color="#28a745" />
               <Text style={styles.disabledButtonText}>Proceeded</Text>
             </View>
-          ) : (
+          ) : ( */}
             <TouchableOpacity
               style={styles.proceedButton}
               onPress={() => handleProceed(item)}
@@ -496,7 +496,7 @@ function GenApprovedList() {
               <Icon name="arrow-forward" size={14} color="#fff" />
               <Text style={styles.proceedButtonText}>Proceed</Text>
             </TouchableOpacity>
-          )}
+          {/* )} */}
         </View>
       </View>
     );

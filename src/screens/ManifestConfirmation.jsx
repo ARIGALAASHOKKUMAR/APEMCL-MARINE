@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,10 @@ import {
   StatusBar,
   Platform,
   Dimensions,
+  BackHandler,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useFormik, FormikProvider } from 'formik';
 import * as Yup from 'yup';
@@ -34,7 +35,6 @@ import {
 } from '../utils/utils';
 import { OpenLoader, TermsAndConditions, allowNumbersOnly, allowNumbersOnlyDot } from '../utils/CommonFunctions';
 import { showModal } from '../actions';
-// import StepperProgress from './Test';
 
 const { width, height } = Dimensions.get('window');
 
@@ -46,6 +46,7 @@ function ManifestConfirmation() {
   const data = route?.params?.data;
   const key = route?.params?.key;
   const path = route?.params?.path || '';
+  const onGoBack = route?.params?.onGoBack;
   
   const state = useSelector((state) => state.LoginReducer);
   const { roleId } = state;
@@ -69,6 +70,7 @@ function ManifestConfirmation() {
   const [selectedWasteOptions, setSelectedWasteOptions] = useState([]);
   const [disposalMethod, setDisposalMethod] = useState([]);
   const [wasteDetails, setWasteDetails] = useState([]);
+  const isNavigatingRef = useRef(false);
 
   let wasteId = data?.waste_disposal_id || route?.params?.wasteDisposalId || '';
   let wasteInterestId = data?.waste_disposal_interest_id || route?.params?.wasteDisposalInterestId || '';
@@ -98,6 +100,77 @@ function ManifestConfirmation() {
     ],
   };
 
+  // Get the previous screen name based on key and path
+  const getPreviousScreenName = useCallback(() => {
+    // If we have a specific screen name from params, use it
+    if (route?.params?.previousScreen) {
+      return route.params.previousScreen;
+    }
+    
+    // Determine based on key and path
+    if (key === 'transport') {
+      return 'PendingList';
+    } else if (key === 'receiver') {
+      return 'ManifestListRec';
+    } else {
+      if (path === '/PendingList') return 'PendingList';
+      if (path === '/ManifestListRec') return 'ManifestListRec';
+      if (path === '/AcceptedList') return 'AcceptedList';
+      if (path === '/RejectedList') return 'RejectedList';
+      return 'ManifestList';
+    }
+  }, [key, path, route?.params?.previousScreen]);
+
+  // Function to navigate back
+// Function to navigate back — used by your own back icon/button
+const goBack = useCallback(() => {
+  if (onGoBack && typeof onGoBack === 'function') {
+    onGoBack();
+  }
+  if (navigation.canGoBack()) {
+    navigation.goBack();
+  } else {
+    // Fallback only if there's truly nothing to go back to
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: getPreviousScreenName() }],
+      })
+    );
+  }
+}, [navigation, onGoBack, getPreviousScreenName]);
+
+// Handle hardware back button for Android
+useEffect(() => {
+  const backHandler = BackHandler.addEventListener(
+    'hardwareBackPress',
+    () => {
+      if (navigation.canGoBack()) {
+        if (onGoBack && typeof onGoBack === 'function') {
+          onGoBack();
+        }
+        navigation.goBack();
+        return true; // we handled it
+      }
+      return false; // let the OS handle it (e.g. exit app)
+    }
+  );
+
+  return () => backHandler.remove();
+}, [navigation, onGoBack]);
+
+// Handle swipe-back / gesture navigation
+useEffect(() => {
+  const unsubscribe = navigation.addListener('beforeRemove', () => {
+    // Don't preventDefault — let the normal back action proceed,
+    // just make sure the refresh callback runs first.
+    if (onGoBack && typeof onGoBack === 'function') {
+      onGoBack();
+    }
+  });
+
+  return unsubscribe;
+}, [navigation, onGoBack]);
   async function DisposalMethods(receiver_type_id) {
     let res = await commonAPICall(RECEIVERDISPOSALMETHODS + receiver_type_id, {}, 'GET', dispatch);
     if (res.status === 200) {
@@ -233,12 +306,7 @@ function ManifestConfirmation() {
       
       let res = await commonAPICall(REDIRECTIONREQUESTTOADMIN, payload, 'post', dispatch);
       if (res.status === 200) {
-        navigation.navigate('GenApprovedList', {
-          id: '4',
-          state: {
-            rowData: manifest,
-          }
-        });
+        goBack();
       }
     },
   });
@@ -327,13 +395,7 @@ function ManifestConfirmation() {
     const finalPayload = key === 'transport' ? transportPayload : payload;
     let res = await commonAPICall(POSTMANIFEST, finalPayload, "POST", dispatch);
     if (res.status === 200) {
-      if (key === 'transport') {
-        navigation.navigate('PendingList');
-      } else if (key === 'receiver') {
-        navigation.navigate('ManifestListRec');
-      } else {
-        navigation.navigate('ManifestList');
-      }
+      goBack();
     }
   };
 
@@ -345,13 +407,8 @@ function ManifestConfirmation() {
     };
     let res = await commonAPICall(RECEIVERREQUESTMANIFESTCLOSEADMIN, payload, 'post', dispatch);
     if (res.status === 200) {
-      if (key === 'transport') {
-        navigation.navigate('PendingList');
-      } else if (key === 'receiver') {
-        navigation.navigate('ManifestListRec');
-      } else {
-        navigation.navigate('ManifestList');
-      }
+      setRecModal(false);
+      goBack();
     }
   }
 
@@ -396,7 +453,7 @@ function ManifestConfirmation() {
     
     let res = await commonAPICall(POSTMANIFEST, finalPayload, 'post', dispatch);
     if (res.status === 200) {
-      navigation.navigate('ManifestList');
+      goBack();
     }
   };
 
@@ -420,13 +477,20 @@ function ManifestConfirmation() {
         <ScrollView style={styles.container}>
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Icon name="list" size={24} color="#2e7d32" />
+              <TouchableOpacity onPress={goBack} style={styles.backHeaderButton}>
+                <Icon name="arrow-back" size={24} color="#2e7d32" />
+              </TouchableOpacity>
               <Text style={styles.cardTitle}>Preview Trem Card and Manifest</Text>
+              <View style={{ width: 24 }} />
             </View>
             <View style={styles.noDataContainer}>
               <Icon name="info-outline" size={40} color="#856404" />
               <Text style={styles.noDataText}>No manifest data available.</Text>
             </View>
+            <TouchableOpacity style={styles.backButton} onPress={goBack}>
+              <Icon name="arrow-back" size={20} color="#fff" />
+              <Text style={styles.backButtonText}>Go Back</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -450,6 +514,9 @@ function ManifestConfirmation() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalHeaderText}>{CONTEXT_HEADING}</Text>
+              <TouchableOpacity onPress={() => setRejected(false)}>
+                <Icon name="close" size={24} color="#fff" />
+              </TouchableOpacity>
             </View>
             <View style={styles.modalBody}>
               <Text style={styles.modalLabel}>Remarks</Text>
@@ -509,7 +576,6 @@ function ManifestConfirmation() {
                 <TouchableOpacity
                   style={styles.pickerButton}
                   onPress={() => {
-                    // Show picker options
                     Alert.alert(
                       "Select Reason",
                       "",
@@ -569,10 +635,13 @@ function ManifestConfirmation() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Icon name="list" size={24} color="#2e7d32" />
+            <TouchableOpacity onPress={goBack} style={styles.backHeaderButton}>
+              <Icon name="arrow-back" size={24} color="#2e7d32" />
+            </TouchableOpacity>
             <Text style={styles.cardTitle}>
               {key === 'transport' ? 'Transport Acceptance' : 'Preview Trem Card and Manifest'}
             </Text>
+            <View style={{ width: 24 }} />
           </View>
 
           <View style={styles.cardBody}>
@@ -1176,7 +1245,7 @@ function ManifestConfirmation() {
                             ))}
 
                             <View style={styles.receiverFormButtons}>
-                              <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={() => navigation.navigate('ManifestListRec')}>
+                              <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={goBack}>
                                 <Text style={styles.buttonText}>Back to list</Text>
                               </TouchableOpacity>
                               <TouchableOpacity style={[styles.button, styles.successButton]} onPress={formik.handleSubmit}>
@@ -1232,16 +1301,20 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     backgroundColor: '#f8f9fa',
     borderBottomWidth: 1,
     borderBottomColor: '#e8ecf1',
+  },
+  backHeaderButton: {
+    padding: 4,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#2e7d32',
-    marginLeft: 8,
+    flex: 1,
+    textAlign: 'center',
   },
   cardBody: {
     padding: 12,
@@ -1277,6 +1350,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2e7d32',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   manifestContainer: {
     marginBottom: 16,
