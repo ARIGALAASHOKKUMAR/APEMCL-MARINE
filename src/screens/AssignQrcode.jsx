@@ -32,6 +32,7 @@ import {
   UPDATEASSIGNDUTY,
 } from "../utils/utils";
 import ImageBucketRN from "../utils/ImageBucketRN";
+import { GetTeamLeaders } from "../utils/CommonFunctions";
 
 const SampleCollectionRequests = () => {
   const dispatch = useDispatch();
@@ -51,7 +52,6 @@ const SampleCollectionRequests = () => {
   const [tempDate, setTempDate] = useState(new Date());
   const [tempUpdateDate, setTempUpdateDate] = useState(new Date());
   const [teamLeaders, setTeamLeaders] = useState([]);
-
   // Validation Schemas
   const validationSchema = Yup.object({
     assignedTeamLeaderId: Yup.string().required("required"),
@@ -272,17 +272,9 @@ const SampleCollectionRequests = () => {
     const formattedDate = currentDate.toISOString().split("T")[0];
     updateFormik.setFieldValue("assignedDate", formattedDate);
   };
-  const GetTeamLeaders = async () => {
-      const res = await commonAPICall(TEAMLEADERDETAILS, {}, "get", dispatch);
-      if (res.status === 200) {
-        setTeamLeaders(res.data.TeamLeaderDetails || []);
-      } else {
-        setTeamLeaders([]);
-      }
-   
-  };
+
   useEffect(() => {
-    GetTeamLeaders();
+    GetTeamLeaders(teamLeaders, setTeamLeaders, dispatch);
     GetData();
   }, []);
 

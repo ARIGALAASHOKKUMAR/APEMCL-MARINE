@@ -6,11 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/logo2.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/logo2.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0b5db3"
-    },
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "in.apcfss.apemcl",
@@ -20,6 +16,7 @@
         "NSPhotoLibraryAddUsageDescription": "This app needs permission to save QR codes to your photo library"
       }
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo2.png",
@@ -32,9 +29,11 @@
         "android.permission.CAMERA"
       ]
     },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
+
     "plugins": [
       "@react-native-community/datetimepicker",
       "expo-font",
@@ -50,7 +49,9 @@
         "expo-build-properties",
         {
           "android": {
-            "buildArchs": ["arm64-v8a"]
+            "buildArchs": [
+              "arm64-v8a"
+            ]
           }
         }
       ],

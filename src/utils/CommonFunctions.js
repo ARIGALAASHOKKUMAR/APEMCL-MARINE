@@ -22,6 +22,7 @@ import {
   MANDALSNEW,
   myAxios,
   SUBMIT_FEEDBACK,
+  TEAMLEADERDETAILS,
   VILLAGESNEW,
 } from "./utils";
 
@@ -756,8 +757,6 @@ export const isPdfUrl = (url) => {
   return /\.pdf$/i.test(url);
 };
 
-
-
 // Download file using Linking
 export const downloadFile = (fileUrl) => {
   if (!fileUrl) {
@@ -773,7 +772,6 @@ export const downloadFile = (fileUrl) => {
   }
 };
 
-
 export const wasteTypes = [
   { value: "1", label: "Effluent" },
   { value: "2", label: "HW - Land Fillable" },
@@ -782,3 +780,12 @@ export const wasteTypes = [
   { value: "5", label: "HW - Utilizable" },
   { value: "6", label: "Non Hazardous" },
 ];
+
+export const GetTeamLeaders = async (teamLeaders, setTeamLeaders, dispatch) => {
+  const res = await commonAPICall(TEAMLEADERDETAILS, {}, "get", dispatch);
+  if (res.status === 200) {
+    setTeamLeaders(res.data.TeamLeaderDetails || []);
+  } else {
+    setTeamLeaders([]);
+  }
+};

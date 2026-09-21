@@ -28,6 +28,7 @@ import {
   TEAMLEADERDETAILS,
 } from "../utils/utils";
 import ImageBucketRN from "../utils/ImageBucketRN";
+import { GetTeamLeaders } from "../utils/CommonFunctions";
 
 const AnalysisReport = () => {
   const dispatch = useDispatch();
@@ -164,20 +165,9 @@ const AnalysisReport = () => {
       setLoading(false);
     }
   };
-  const GetTeamLeaders = async (flag) => {
-   
-      const res = await commonAPICall(TEAMLEADERDETAILS, {}, "get", dispatch);
-
-      if (res.status === 200) {
-        setTeamLeaders(res.data.TeamLeaderDetails || []);
-      } else {
-        setTeamLeaders([]);
-      }
-   
-  };
-
+  
   useEffect(() => {
-    GetTeamLeaders();
+    GetTeamLeaders(teamLeaders, setTeamLeaders, dispatch);
     GetData(1); // Initially load Assigned (1)
   }, []);
 

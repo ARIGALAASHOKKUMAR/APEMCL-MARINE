@@ -31,134 +31,155 @@ const HomeScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  
+
   // Drilldown states
   const [drillModalVisible, setDrillModalVisible] = useState(false);
   const [drillData, setDrillData] = useState([]);
   const [drillLoading, setDrillLoading] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
-  
+
   // Logout modal state
   const [logoutVisible, setLogoutVisible] = useState(false);
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
-  // Card configurations with beautiful gradients
+  // Card configurations
   const cardConfigs = {
-    sample_assignment_pending: {
+    // ===== SAMPLINGS (3 cards: Assigned, Unassigned, Completed) =====
+    sample_assignment_assigned: {
       label: "Assigned",
-      icon: "assignment",
-      gradient: ['#FF6B6B', '#FF8E53'],
+      icon: "assignment-turned-in",
+      gradient: ["#00B894", "#00CEC9"],
       category: "samplings",
-      drillType: "sample_assignment_pending"
+      drillType: "sample_assignment_assigned",
+    },
+    sample_assignment_pending: {
+      label: "Unassigned",
+      icon: "assignment-late",
+      gradient: ["#FDCB6E", "#F39C12"],
+      category: "samplings",
+      drillType: "sample_assignment_pending",
     },
     sample_assignment_completed: {
       label: "Completed",
       icon: "check-circle",
-      gradient: ['#00B894', '#00CEC9'],
+      gradient: ["#0984E3", "#74B9FF"],
       category: "samplings",
-      drillType: "sample_collection_completed"
+      drillType: "sample_collection_completed",
     },
-    sample_collection_pending: {
-      label: "Pending Collection",
-      icon: "pending",
-      gradient: ['#FDCB6E', '#F39C12'],
-      category: "samplings",
-      drillType: "sample_collection_pending"
-    },
-    sample_collection_completed: {
-      label: "Collection Completed",
-      icon: "assignment-turned-in",
-      gradient: ['#0984E3', '#74B9FF'],
-      category: "samplings",
-      drillType: "sample_collection_completed"
-    },
+
+    // ===== DISCHARGE =====
     discharge_assignment_pending: {
       label: "Assigned",
       icon: "assignment-late",
-      gradient: ['#E17055', '#D63031'],
+      gradient: ["#E17055", "#D63031"],
       category: "discharge",
-      drillType: "discharge_assignment_pending"
+      drillType: "discharge_assignment_pending",
     },
     discharge_assignment_completed: {
       label: "Completed",
       icon: "assignment-turned-in",
-      gradient: ['#0984E3', '#6C5CE7'],
+      gradient: ["#0984E3", "#6C5CE7"],
       category: "discharge",
-      drillType: "discharge_assigned"
+      drillType: "discharge_assigned",
     },
     discharge_completed: {
       label: "Completed",
       icon: "check-circle",
-      gradient: ['#00B894', '#00CEC9'],
+      gradient: ["#00B894", "#00CEC9"],
       category: "discharge",
-      drillType: "discharge_completed"
+      drillType: "discharge_completed",
     },
     discharge_in_progress: {
       label: "In Progress",
       icon: "hourglass-empty",
-      gradient: ['#FDCB6E', '#F39C12'],
+      gradient: ["#FDCB6E", "#F39C12"],
       category: "discharge",
-      drillType: "discharge_in_progress"
+      drillType: "discharge_in_progress",
     },
     discharge_start_pending: {
       label: "Start Pending",
       icon: "pending",
-      gradient: ['#E17055', '#D63031'],
+      gradient: ["#E17055", "#D63031"],
       category: "discharge",
-      drillType: "discharge_start_pending"
+      drillType: "discharge_start_pending",
     },
+
+    // ===== EDIT REQUESTS =====
     edit_request_approved: {
       label: "Approved",
       icon: "check-circle",
-      gradient: ['#00B894', '#55EFC4'],
+      gradient: ["#00B894", "#55EFC4"],
       category: "edit",
-      drillType: "edit_request_approved"
+      drillType: "edit_request_approved",
     },
     edit_request_pending: {
       label: "Pending",
       icon: "edit",
-      gradient: ['#FDCB6E', '#F39C12'],
+      gradient: ["#FDCB6E", "#F39C12"],
       category: "edit",
-      drillType: "edit_request_pending"
+      drillType: "edit_request_pending",
     },
     edit_request_rejected: {
       label: "Rejected",
       icon: "cancel",
-      gradient: ['#E17055', '#D63031'],
+      gradient: ["#E17055", "#D63031"],
       category: "edit",
-      drillType: "edit_request_rejected"
+      drillType: "edit_request_rejected",
     },
+
+    // ===== ANALYSIS =====
     analysis_completed: {
       label: "Completed",
       icon: "done-all",
-      gradient: ['#0984E3', '#74B9FF'],
+      gradient: ["#0984E3", "#74B9FF"],
       category: "analysis",
-      drillType: "analysis_completed"
+      drillType: "analysis_completed",
     },
     analysis_pending: {
       label: "Pending",
       icon: "pending",
-      gradient: ['#FDCB6E', '#F39C12'],
+      gradient: ["#FDCB6E", "#F39C12"],
       category: "analysis",
-      drillType: "analysis_pending"
+      drillType: "analysis_pending",
     },
+
+    // ===== CONTINUE =====
     continue_next_day_requests: {
       label: "Continue Next Day",
       icon: "today",
-      gradient: ['#6C5CE7', '#A29BFE'],
+      gradient: ["#6C5CE7", "#A29BFE"],
       category: "continue",
-      drillType: "continue_next_day"
+      drillType: "continue_next_day",
     },
+  };
+
+  // Preferred display order for keys inside each category
+  const categoryKeyOrder = {
+    samplings: [
+      "sample_assignment_assigned",
+      "sample_assignment_pending",
+      "sample_assignment_completed",
+    ],
+    discharge: [
+      "discharge_assignment_pending",
+      "discharge_start_pending",
+      "discharge_in_progress",
+      "discharge_assignment_completed",
+      "discharge_completed",
+    ],
+    edit: ["edit_request_pending", "edit_request_approved", "edit_request_rejected"],
+    analysis: ["analysis_pending", "analysis_completed"],
+    continue: ["continue_next_day_requests"],
   };
 
   // Handle hardware back button
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
+      "hardwareBackPress",
       handleBackPress
     );
 
@@ -166,27 +187,20 @@ const HomeScreen = ({ navigation }) => {
   }, []);
 
   const handleBackPress = () => {
-    // Show custom logout modal
     setLogoutVisible(true);
-    return true; // Prevent default back behavior
+    return true;
   };
 
   const handleLogout = async () => {
     try {
-      // Close logout modal
       setLogoutVisible(false);
-      
-      // Dispatch logout action to clear Redux state
       dispatch(logOut());
-      
-      // Navigate to Login screen
       navigation.reset({
         index: 0,
         routes: [{ name: "Login" }],
       });
     } catch (error) {
       console.log("Logout error:", error);
-      // Even if there's an error, try to navigate to login
       navigation.reset({
         index: 0,
         routes: [{ name: "Login" }],
@@ -196,67 +210,63 @@ const HomeScreen = ({ navigation }) => {
 
   // Role-based drill types mapping
   const getDrillTypeForRole = (key) => {
-    console.log("lkl", key);
-
     const roleDrillMap = {
       // Admin role
-      '1': {
-        'sample_assignment_pending': 'sample_assignment_pending',
-        'sample_assignment_completed': 'sample_collection_completed',
-        'sample_collection_pending': 'sample_collection_pending',
-        'sample_collection_completed': 'sample_collection_completed',
-        'discharge_assignment_pending': 'discharge_assignment_pending',
-        'discharge_assignment_completed': 'discharge_assigned',
-        'discharge_completed': 'discharge_completed',
-        'discharge_in_progress': 'discharge_in_progress',
-        'discharge_start_pending': 'discharge_start_pending',
-        'edit_request_approved': 'edit_request_approved',
-        'edit_request_pending': 'edit_request_pending',
-        'edit_request_rejected': 'edit_request_rejected',
-        'analysis_completed': 'analysis_completed',
-        'analysis_pending': 'analysis_pending',
-        'continue_next_day_requests': 'continue_next_day',
+      "1": {
+        sample_assignment_assigned: "sample_assignment_assigned",
+        sample_assignment_pending: "sample_assignment_pending",
+        sample_assignment_completed: "sample_collection_completed",
+        discharge_assignment_pending: "discharge_assignment_pending",
+        discharge_assignment_completed: "discharge_assigned",
+        discharge_completed: "discharge_completed",
+        discharge_in_progress: "discharge_in_progress",
+        discharge_start_pending: "discharge_start_pending",
+        edit_request_approved: "edit_request_approved",
+        edit_request_pending: "edit_request_pending",
+        edit_request_rejected: "edit_request_rejected",
+        analysis_completed: "analysis_completed",
+        analysis_pending: "analysis_pending",
+        continue_next_day_requests: "continue_next_day",
       },
       // Industry role
-      '2': {
-        'sample_assignment_pending': 'pending_requests',
-        'sample_assignment_completed': 'completed_requests',
-        'sample_collection_pending': 'pending_requests',
-        'sample_collection_completed': 'completed_requests',
-        'discharge_assignment_pending': 'pending_requests',
-        'discharge_assignment_completed': 'completed_requests',
-        'discharge_completed': 'completed_requests',
-        'discharge_in_progress': 'pending_requests',
-        'discharge_start_pending': 'pending_requests',
-        'edit_request_approved': 'edit_request_approved',
-        'edit_request_pending': 'edit_request_pending',
-        'edit_request_rejected': 'edit_request_rejected',
-        'analysis_completed': 'completed_requests',
-        'analysis_pending': 'pending_requests',
-        'continue_next_day_requests': 'continue_next_day',
-      }
+      "2": {
+        sample_assignment_assigned: "pending_requests",
+        sample_assignment_pending: "pending_requests",
+        sample_assignment_completed: "completed_requests",
+        discharge_assignment_pending: "pending_requests",
+        discharge_assignment_completed: "completed_requests",
+        discharge_completed: "completed_requests",
+        discharge_in_progress: "pending_requests",
+        discharge_start_pending: "pending_requests",
+        edit_request_approved: "edit_request_approved",
+        edit_request_pending: "edit_request_pending",
+        edit_request_rejected: "edit_request_rejected",
+        analysis_completed: "completed_requests",
+        analysis_pending: "pending_requests",
+        continue_next_day_requests: "continue_next_day",
+      },
     };
-    
+
     return roleDrillMap[roleId]?.[key] || key;
   };
 
   const getDefaultConfig = (key) => {
     const label = key
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
     const gradients = [
-      ['#FF6B6B', '#FF8E53'],
-      ['#00B894', '#00CEC9'],
-      ['#0984E3', '#74B9FF'],
-      ['#FDCB6E', '#F39C12'],
-      ['#6C5CE7', '#A29BFE'],
-      ['#E17055', '#D63031'],
+      ["#FF6B6B", "#FF8E53"],
+      ["#00B894", "#00CEC9"],
+      ["#0984E3", "#74B9FF"],
+      ["#FDCB6E", "#F39C12"],
+      ["#6C5CE7", "#A29BFE"],
+      ["#E17055", "#D63031"],
     ];
-    const hash = key.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const hash = key.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const gradient = gradients[hash % gradients.length];
-    
+
     return {
       label: label,
       icon: "dashboard",
@@ -326,20 +336,14 @@ const HomeScreen = ({ navigation }) => {
     return dashboardData[key] ?? 0;
   };
 
-  // Updated drilldown function to handle the response structure
   const fetchDrillData = async (countType) => {
     setDrillLoading(true);
     try {
       const url = `${MARINEDISCHARGEDRILLDOWN}?countType=${countType}`;
       const res = await commonAPICall(url, {}, "get", dispatch);
-      
-      console.log("Drill API Response:", url, res.status);
-      
       if (res?.status === 200) {
-        // Check if data exists and extract the drilldown array
         let drillDataArray = [];
-        
-        // Try to extract data from various possible response structures
+
         if (res?.data?.Marine_Discharge_Dashboard_Drilldown) {
           drillDataArray = res.data.Marine_Discharge_Dashboard_Drilldown;
         } else if (res?.data && Array.isArray(res.data)) {
@@ -349,7 +353,6 @@ const HomeScreen = ({ navigation }) => {
         } else if (res?.data?.Data && Array.isArray(res.data.Data)) {
           drillDataArray = res.data.Data;
         } else {
-          // If no array found, try to extract any array from the response
           const dataKeys = Object.keys(res.data || {});
           for (let key of dataKeys) {
             if (Array.isArray(res.data[key]) && res.data[key].length > 0) {
@@ -358,11 +361,9 @@ const HomeScreen = ({ navigation }) => {
             }
           }
         }
-        
-        console.log("Drill Data Array:", drillDataArray);
+
         setDrillData(drillDataArray);
       } else {
-        console.log("API Error - Status:", res?.status);
         setDrillData([]);
       }
     } catch (error) {
@@ -382,28 +383,36 @@ const HomeScreen = ({ navigation }) => {
 
   const getGroupedData = () => {
     if (!dashboardData) return {};
-    
+
     const grouped = {};
     const keys = Object.keys(dashboardData);
-    
-    keys.forEach(key => {
+
+    keys.forEach((key) => {
       const value = getValue(key);
-      // if (value === 0) return;
-      
       const config = getConfig(key);
       const category = config.category || "other";
-      
+
       if (!grouped[category]) {
         grouped[category] = [];
       }
-      
+
       grouped[category].push({
         key,
         config,
-        value
+        value,
       });
     });
-    
+
+    // Sort items within each category according to preferred order
+    Object.keys(grouped).forEach((category) => {
+      const order = categoryKeyOrder[category];
+      if (order) {
+        grouped[category].sort(
+          (a, b) => order.indexOf(a.key) - order.indexOf(b.key)
+        );
+      }
+    });
+
     return grouped;
   };
 
@@ -412,96 +421,98 @@ const HomeScreen = ({ navigation }) => {
       samplings: {
         title: "Samplings",
         icon: "science",
-        gradient: ['#00B894', '#00CEC9'],
-        emoji: "🧪"
+        gradient: ["#00B894", "#00CEC9"],
+        emoji: "🧪",
       },
       discharge: {
         title: "Discharge",
         icon: "local-shipping",
-        gradient: ['#0984E3', '#6C5CE7'],
-        emoji: "🚢"
+        gradient: ["#0984E3", "#6C5CE7"],
+        emoji: "🚢",
       },
       edit: {
         title: "Edit Requests",
         icon: "edit",
-        gradient: ['#FDCB6E', '#F39C12'],
-        emoji: "✏️"
+        gradient: ["#FDCB6E", "#F39C12"],
+        emoji: "✏️",
       },
       analysis: {
         title: "Analysis",
         icon: "analytics",
-        gradient: ['#6C5CE7', '#A29BFE'],
-        emoji: "📊"
+        gradient: ["#6C5CE7", "#A29BFE"],
+        emoji: "📊",
       },
       continue: {
         title: "Continue Next Day",
         icon: "today",
-        gradient: ['#E17055', '#D63031'],
-        emoji: "📅"
+        gradient: ["#E17055", "#D63031"],
+        emoji: "📅",
       },
       other: {
         title: "Other",
         icon: "more-horiz",
-        gradient: ['#636E72', '#B2BEC3'],
-        emoji: "📌"
-      }
+        gradient: ["#636E72", "#B2BEC3"],
+        emoji: "📌",
+      },
     };
-    
+
     return categoryMap[category] || categoryMap.other;
   };
 
   const formatDate = (date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
     return `${day}-${month}-${year}`;
   };
 
-  // Helper function to get status color
   const getStatusColor = (status) => {
     const statusMap = {
-      'MARINE DISCHARGE COMPLETED': '#4CAF50',
-      'COMPLETED': '#4CAF50',
-      'PENDING': '#F39C12',
-      'IN_PROGRESS': '#2196F3',
-      'IN PROGRESS': '#2196F3',
-      'APPROVED': '#4CAF50',
-      'REJECTED': '#F44336',
-      'ABORTED': '#F44336',
-      'START_PENDING': '#F39C12',
-      'START PENDING': '#F39C12',
+      "MARINE DISCHARGE COMPLETED": "#4CAF50",
+      COMPLETED: "#4CAF50",
+      PENDING: "#F39C12",
+      IN_PROGRESS: "#2196F3",
+      "IN PROGRESS": "#2196F3",
+      APPROVED: "#4CAF50",
+      REJECTED: "#F44336",
+      ABORTED: "#F44336",
+      START_PENDING: "#F39C12",
+      "START PENDING": "#F39C12",
     };
-    return statusMap[status?.toUpperCase()] || '#999';
+    return statusMap[status?.toUpperCase()] || "#999";
   };
 
   const getStatusStyle = (status) => {
     const color = getStatusColor(status);
     return {
-      backgroundColor: color + '15',
+      backgroundColor: color + "15",
       color: color,
     };
   };
 
   const renderCategory = (category, items) => {
     const categoryInfo = getCategoryInfo(category);
-    const total = items.reduce((sum, item) => sum + item.value, 0);
-    
     if (items.length === 0) return null;
 
     return (
-      <Animated.View 
+      <Animated.View
         style={[
           styles.categorySection,
           {
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
+            transform: [{ translateY: slideAnim }],
+          },
         ]}
         key={category}
       >
         <View style={styles.categoryHeader}>
           <View style={styles.categoryTitleContainer}>
-            <View style={[styles.categoryIconWrapper, { backgroundColor: categoryInfo.gradient[0] + '20' }]}>
+            <View
+              style={[
+                styles.categoryIconWrapper,
+                { backgroundColor: categoryInfo.gradient[0] + "20" },
+              ]}
+            >
               <Text style={styles.categoryEmoji}>{categoryInfo.emoji}</Text>
             </View>
             <View>
@@ -514,9 +525,9 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.updateText}>{formatDate(lastUpdate)}</Text>
           </View>
         </View>
-        
+
         <View style={styles.categoryCardsGrid}>
-          {items.map((item, index) => (
+          {items.map((item) => (
             <Animated.View
               key={item.key}
               style={[
@@ -524,17 +535,17 @@ const HomeScreen = ({ navigation }) => {
                 {
                   opacity: fadeAnim,
                   transform: [
-                    { 
+                    {
                       scale: scaleAnim.interpolate({
                         inputRange: [0, 1],
-                        outputRange: [0.9, 1]
-                      })
-                    }
-                  ]
-                }
+                        outputRange: [0.9, 1],
+                      }),
+                    },
+                  ],
+                },
               ]}
             >
-              {renderCard(item, index)}
+              {renderCard(item)}
             </Animated.View>
           ))}
         </View>
@@ -542,32 +553,45 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  const renderCard = (item, index) => {
+  const renderCard = (item) => {
     const { config, value } = item;
-    
+
     return (
-      <TouchableOpacity 
-        style={[styles.card, { borderLeftColor: config.gradient[0], borderLeftWidth: 5 }]}
+      <TouchableOpacity
+        style={[
+          styles.card,
+          { borderLeftColor: config.gradient[0], borderLeftWidth: 5 },
+        ]}
         onPress={() => handleCardPress(item)}
         activeOpacity={0.7}
       >
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
-            <View style={[styles.cardIconContainer, { backgroundColor: config.gradient[0] + '15' }]}>
+            <View
+              style={[
+                styles.cardIconContainer,
+                { backgroundColor: config.gradient[0] + "15" },
+              ]}
+            >
               <Icon name={config.icon} size={28} color={config.gradient[0]} />
             </View>
             <Text style={styles.cardValue}>{value}</Text>
           </View>
           <Text style={styles.cardLabel}>{config.label}</Text>
-          <View style={[styles.cardProgress, { backgroundColor: config.gradient[0] + '20' }]}>
-            <View 
+          <View
+            style={[
+              styles.cardProgress,
+              { backgroundColor: config.gradient[0] + "20" },
+            ]}
+          >
+            <View
               style={[
-                styles.cardProgressFill, 
-                { 
+                styles.cardProgressFill,
+                {
                   width: `${Math.min((value / 100) * 100, 100)}%`,
-                  backgroundColor: config.gradient[0]
-                }
-              ]} 
+                  backgroundColor: config.gradient[0],
+                },
+              ]}
             />
           </View>
         </View>
@@ -577,46 +601,44 @@ const HomeScreen = ({ navigation }) => {
 
   const renderSummaryStats = () => {
     if (!dashboardData || Object.keys(dashboardData).length === 0) return null;
-    
+
     const grouped = getGroupedData();
     let total = 0;
     const categoryTotals = {};
-    
+
     Object.entries(grouped).forEach(([category, items]) => {
       const categoryTotal = items.reduce((sum, item) => sum + item.value, 0);
       categoryTotals[category] = categoryTotal;
       total += categoryTotal;
     });
-    
-    // Handle drilldown for total tasks
+
     const handleTotalPress = () => {
-      const drillType = roleId === '1' ? 'total_requests' : 'total_requests';
-      setSelectedCard({ 
-        key: 'total', 
-        config: { label: 'Total Tasks', gradient: ['#6C5CE7', '#A29BFE'] } 
+      const drillType = "total_requests";
+      setSelectedCard({
+        key: "total",
+        config: { label: "Total Tasks", gradient: ["#6C5CE7", "#A29BFE"] },
       });
       setDrillModalVisible(true);
       fetchDrillData(drillType);
     };
 
     return (
-      <Animated.View 
+      <Animated.View
         style={[
           styles.summaryContainer,
           {
             opacity: fadeAnim,
-            transform: [{ scale: scaleAnim }]
-          }
+            transform: [{ scale: scaleAnim }],
+          },
         ]}
       >
-       
         <View style={styles.summaryGrid}>
-          <TouchableOpacity 
-            style={styles.summaryCard} 
+          <TouchableOpacity
+            style={styles.summaryCard}
             onPress={handleTotalPress}
             activeOpacity={0.7}
           >
-            <View style={[styles.summaryIcon, { backgroundColor: '#6C5CE7' }]}>
+            <View style={[styles.summaryIcon, { backgroundColor: "#6C5CE7" }]}>
               <Icon name="assessment" size={24} color="#FFF" />
             </View>
             <Text style={styles.summaryValue}>{total}</Text>
@@ -626,25 +648,32 @@ const HomeScreen = ({ navigation }) => {
             const info = getCategoryInfo(category);
             if (count === 0) return null;
             const handleCategoryPress = () => {
-              const drillType = roleId === '1' ? 'total_requests' : 'total_requests';
-              setSelectedCard({ 
-                key: category, 
-                config: { label: info.title, gradient: info.gradient } 
+              const drillType = "total_requests";
+              setSelectedCard({
+                key: category,
+                config: { label: info.title, gradient: info.gradient },
               });
               setDrillModalVisible(true);
               fetchDrillData(drillType);
             };
             return (
-              <TouchableOpacity 
-                style={styles.summaryCard} 
+              <TouchableOpacity
+                style={styles.summaryCard}
                 key={category}
                 onPress={handleCategoryPress}
                 activeOpacity={0.7}
               >
-                <View style={[styles.summaryIcon, { backgroundColor: info.gradient[0] }]}>
+                <View
+                  style={[
+                    styles.summaryIcon,
+                    { backgroundColor: info.gradient[0] },
+                  ]}
+                >
                   <Text style={styles.summaryEmoji}>{info.emoji}</Text>
                 </View>
-                <Text style={[styles.summaryValue, { color: info.gradient[0] }]}>
+                <Text
+                  style={[styles.summaryValue, { color: info.gradient[0] }]}
+                >
                   {count}
                 </Text>
                 <Text style={styles.summaryLabel}>{info.title}</Text>
@@ -656,7 +685,6 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  // Updated renderDrillModal with better data display
   const renderDrillModal = () => {
     return (
       <Modal
@@ -670,13 +698,13 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalTitle}>
-                  {selectedCard?.config?.label || 'Details'}
+                  {selectedCard?.config?.label || "Details"}
                 </Text>
                 <Text style={styles.modalSubtitle}>
                   {drillData.length} records found
                 </Text>
               </View>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.modalCloseButton}
                 onPress={() => setDrillModalVisible(false)}
               >
@@ -697,12 +725,13 @@ const HomeScreen = ({ navigation }) => {
             ) : (
               <FlatList
                 data={drillData}
-                keyExtractor={(item, index) => (item.postingid?.toString() || item.dischargerequestid || index.toString())}
+                keyExtractor={(item, index) =>
+                  item.postingid?.toString() ||
+                  item.dischargerequestid ||
+                  index.toString()
+                }
                 renderItem={({ item, index }) => (
-                  <TouchableOpacity 
-                    style={styles.drillItem}
-                    activeOpacity={0.7}
-                  >
+                  <TouchableOpacity style={styles.drillItem} activeOpacity={0.7}>
                     <View style={styles.drillItemNumber}>
                       <Text style={styles.drillItemIndex}>{index + 1}</Text>
                     </View>
@@ -711,12 +740,26 @@ const HomeScreen = ({ navigation }) => {
                         {item.dischargerequestid || `Request ${index + 1}`}
                       </Text>
                       <Text style={styles.drillItemIndustry}>
-                        {item.industryname || 'N/A'}
+                        {item.industryname || "N/A"}
                       </Text>
                       <View style={styles.drillItemDetails}>
-                        <View style={[styles.drillItemStatus, getStatusStyle(item.currentstatus || item.status)]}>
-                          <Text style={[styles.drillItemStatusText, { color: getStatusColor(item.currentstatus || item.status) }]}>
-                            {item.currentstatus || item.status || 'Unknown'}
+                        <View
+                          style={[
+                            styles.drillItemStatus,
+                            getStatusStyle(item.currentstatus || item.status),
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.drillItemStatusText,
+                              {
+                                color: getStatusColor(
+                                  item.currentstatus || item.status
+                                ),
+                              },
+                            ]}
+                          >
+                            {item.currentstatus || item.status || "Unknown"}
                           </Text>
                         </View>
                         {item.requestdate && (
@@ -727,13 +770,16 @@ const HomeScreen = ({ navigation }) => {
                       </View>
                       {item.guardpondname && (
                         <Text style={styles.drillItemLocation}>
-                          <Icon name="location-on" size={12} color="#999" /> {item.guardpondname}
+                          <Icon name="location-on" size={12} color="#999" />{" "}
+                          {item.guardpondname}
                         </Text>
                       )}
                     </View>
                   </TouchableOpacity>
                 )}
-                ItemSeparatorComponent={() => <View style={styles.drillSeparator} />}
+                ItemSeparatorComponent={() => (
+                  <View style={styles.drillSeparator} />
+                )}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.drillListContent}
               />
@@ -744,7 +790,6 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  // Render logout confirmation modal
   const renderLogoutModal = () => {
     return (
       <Modal
@@ -782,12 +827,12 @@ const HomeScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor="#6C5CE7" />
-      
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl 
-            refreshing={refreshing} 
+          <RefreshControl
+            refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor="#6C5CE7"
             colors={["#6C5CE7"]}
@@ -813,7 +858,7 @@ const HomeScreen = ({ navigation }) => {
         ) : (
           <View>
             {/* {renderSummaryStats()} */}
-            {Object.entries(getGroupedData()).map(([category, items]) => 
+            {Object.entries(getGroupedData()).map(([category, items]) =>
               renderCategory(category, items)
             )}
           </View>
@@ -829,7 +874,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: "#F8F9FA",
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -837,88 +882,69 @@ const styles = StyleSheet.create({
   },
   centerMessage: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     minHeight: 300,
   },
   loadingContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   loadingSpinner: {
     width: 40,
     height: 40,
     borderRadius: 20,
     borderWidth: 3,
-    borderColor: '#6C5CE7',
-    borderTopColor: 'transparent',
+    borderColor: "#6C5CE7",
+    borderTopColor: "transparent",
     marginBottom: 12,
   },
   loadingText: {
     fontSize: 16,
-    color: '#999',
+    color: "#999",
   },
   messageText: {
     fontSize: 16,
-    color: '#999',
+    color: "#999",
     marginTop: 12,
   },
   retryButton: {
     marginTop: 16,
     paddingHorizontal: 24,
     paddingVertical: 10,
-    backgroundColor: '#6C5CE7',
+    backgroundColor: "#6C5CE7",
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#FFF',
-    fontWeight: '600',
+    color: "#FFF",
+    fontWeight: "600",
   },
   summaryContainer: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 3,
   },
-  summaryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  summaryTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   summaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   summaryCard: {
-    alignItems: 'center',
-    minWidth: '22%',
+    alignItems: "center",
+    minWidth: "22%",
     paddingVertical: 6,
   },
   summaryIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 8,
   },
   summaryEmoji: {
@@ -926,34 +952,34 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 22,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontWeight: "700",
+    color: "#1A1A1A",
   },
   summaryLabel: {
     fontSize: 12,
-    color: '#7A8A9A',
+    color: "#7A8A9A",
     marginTop: 2,
-    textAlign: 'center',
+    textAlign: "center",
   },
   categorySection: {
     marginBottom: 24,
   },
   categoryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 14,
   },
   categoryTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   categoryIconWrapper: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   categoryEmoji: {
@@ -961,37 +987,37 @@ const styles = StyleSheet.create({
   },
   categoryTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#1A1A1A',
+    fontWeight: "600",
+    color: "#1A1A1A",
   },
   categorySubtitle: {
     fontSize: 12,
-    color: '#999',
+    color: "#999",
     marginTop: 1,
   },
   updateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   updateText: {
     fontSize: 11,
-    color: '#999',
+    color: "#999",
     marginLeft: 4,
   },
   categoryCardsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
   },
   cardWrapper: {
-    width: '48%',
+    width: "48%",
     marginBottom: 14,
   },
   card: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderRadius: 14,
     padding: 18,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -1002,144 +1028,143 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
   },
   cardIconContainer: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardValue: {
     fontSize: 32,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontWeight: "700",
+    color: "#1A1A1A",
   },
   cardLabel: {
     fontSize: 15,
-    color: '#666',
-    fontWeight: '500',
+    color: "#666",
+    fontWeight: "500",
     marginBottom: 10,
   },
   cardProgress: {
     height: 4,
     borderRadius: 2,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardProgressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: 2,
   },
   drillIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 12,
     right: 12,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   modalContainer: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    maxHeight: '80%',
-    minHeight: '50%',
+    maxHeight: "80%",
+    minHeight: "50%",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: "#F0F0F0",
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1A1A',
+    fontWeight: "700",
+    color: "#1A1A1A",
   },
   modalSubtitle: {
     fontSize: 14,
-    color: '#999',
+    color: "#999",
     marginTop: 2,
   },
   modalCloseButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F5F5F5',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F5F5F5",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalLoading: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 40,
   },
   modalLoadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#999',
+    color: "#999",
   },
   modalEmpty: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 40,
   },
   modalEmptyText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#999',
+    color: "#999",
   },
   drillListContent: {
     padding: 16,
   },
   drillItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 14,
   },
   drillItemNumber: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F0F0F0",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   drillItemIndex: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
   },
   drillItemContent: {
     flex: 1,
   },
   drillItemTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
+    fontWeight: "600",
+    color: "#1A1A1A",
   },
   drillItemIndustry: {
     fontSize: 13,
-    color: '#666',
+    color: "#666",
     marginTop: 2,
   },
   drillItemDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 4,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   drillItemStatus: {
     paddingHorizontal: 10,
@@ -1149,25 +1174,21 @@ const styles = StyleSheet.create({
   },
   drillItemStatusText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   drillItemDate: {
     fontSize: 12,
-    color: '#999',
+    color: "#999",
   },
   drillItemLocation: {
     fontSize: 12,
-    color: '#999',
+    color: "#999",
     marginTop: 2,
-  },
-  drillItemArrow: {
-    padding: 8,
   },
   drillSeparator: {
     height: 1,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: "#F0F0F0",
   },
-  // Logout Modal Styles
   logoutModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
