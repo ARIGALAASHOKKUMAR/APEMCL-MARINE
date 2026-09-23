@@ -27,12 +27,14 @@ import {
   MARINEDISCHARGEDETAILS,
 } from "../utils/utils";
 import { GetTeamLeaders } from "../utils/CommonFunctions";
+import ImageBucketRN from "../utils/ImageBucketRN";
 
 const DischargeSummary = () => {
   const dispatch = useDispatch();
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [rowData, setRowData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -74,7 +76,7 @@ const DischargeSummary = () => {
       );
       if (res.status === 200) {
         formik.resetForm();
-        GetData();
+        filterData(0);
         setShowModal(false);
         Alert.alert("Success", "Duty assigned successfully");
       }
@@ -84,7 +86,55 @@ const DischargeSummary = () => {
       setLoading(false);
     }
   };
+  const noticeValidationSchema = Yup.object({
+    noticeRemarks: Yup.string()
+      .required("required")
+      .min(10, "Remarks must be at least 10 characters"),
+    noticeAttachment: Yup.string().required("required"),
+  });
+  const noticeFormik = useFormik({
+    initialValues: {
+      noticeRemarks: "",
+      noticeAttachment: null,
+    },
+    validationSchema: noticeValidationSchema,
+    onSubmit: (values) => {
+      HandleNoticeSubmit(values);
+    },
+  });
 
+  const HandleNoticeSubmit = async (values) => {
+    try {
+      setLoading(true);
+      const payload = {
+        ...values,
+        postingId: rowData?.posting_id,
+        // noticeRemarks: values.noticeRemarks,
+        // noticeSubject: values.noticeSubject || 'Notice for discharge violation',
+        // noticeDate: moment().format('YYYY-MM-DD'),
+        // industryName: rowData?.discharge_request_industry,
+        // noticeAttachment: values.noticeAttachment,
+      };
+
+      const res = await commonAPICall(
+        DISCHARGENOTICE,
+        payload,
+        "post",
+        dispatch,
+      );
+      if (res.status === 200) {
+        noticeFormik.resetForm();
+        setShowNoticeModal(false);
+        Alert.alert("Success", "Notice sent successfully!");
+      } else {
+        Alert.alert("Error", "Failed to send notice. Please try again.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to send notice");
+    } finally {
+      setLoading(false);
+    }
+  };
   // Handle Date Change
   const onDateChange = (event, selectedDate) => {
     const currentDate = selectedDate || tempDate;
@@ -110,6 +160,233 @@ const DischargeSummary = () => {
     }
     setActiveFilter(id);
   };
+
+  // Industry Limits
+  const industryLimits = {
+    "ANDHRA ORGANICS": {
+      ph: { min: 5.5, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      phosphate: 5,
+      ammonical: 50,
+      nitrate: 50,
+      chromium: 0.1,
+    },
+    AETL: {
+      ph: { min: 6.0, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      ammonical: 50,
+      nitrate: 50,
+      chromium: 0.1,
+    },
+    APITORIA: {
+      ph: { min: 6.5, max: 8.5 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      ammonical: 50,
+      nitrate: 50,
+      chromium: 0.1,
+    },
+    BRANDIX: {
+      ph: { min: 6.0, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      ammonical: 50,
+      nitrate: 50,
+      chromium: 0.1,
+    },
+    DECCAN: {
+      ph: { min: 6.5, max: 8.5 },
+      tss: 100,
+      cod: 225,
+      phenols: 1,
+      phosphate: 5,
+    },
+    DIVI: {
+      ph: { min: 6.5, max: 8.5 },
+      tss: 100,
+      cod: 225,
+      fluoride: 15,
+      phenols: 1,
+      phosphate: 5,
+      ammonical: 50,
+      nitrate: 20,
+      chromium: 0.1,
+    },
+    HETERO: {
+      ph: { min: 6.0, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      phosphate: 5,
+      ammonical: 50,
+      nitrate: 50,
+      chromium: 0.1,
+    },
+    APARNA: {
+      ph: { min: 6.0, max: 8.5 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      phosphate: 5,
+      ammonical: 50,
+      nitrate: 50,
+      chromium: 0.1,
+    },
+    "VISAKHA PHARMACITY": {
+      ph: { min: 6.0, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      ammonical: 50,
+      nitrate: 50,
+    },
+    SMS: {
+      ph: { min: 6.5, max: 8.5 },
+      tss: 100,
+      cod: 250,
+      phenols: 1,
+      phosphate: 5,
+      ammonical: 100,
+      chromium: 0.1,
+    },
+    SHREAS: {
+      ph: { min: 5.5, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      phenols: 5,
+      ammonical: 50,
+      chromium: 1,
+    },
+    AUROACTIVE: {
+      ph: { min: 5.5, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      phosphate: 5,
+      ammonical: 50,
+      nitrate: 20,
+      chromium: 0.1,
+    },
+    LYFIUS: {
+      ph: { min: 5.5, max: 9.0 },
+      tss: 100,
+      cod: 250,
+      fluoride: 15,
+      phenols: 5,
+      ammonical: 50,
+      nitrate: 20,
+      chromium: 1,
+    },
+    "VIJAYANAGAR BIOTECH": {
+      ph: { min: 6.5, max: 8.5 },
+      tss: 100,
+      cod: 250,
+    },
+  };
+
+  const defaultLimits = {
+    ph: { min: 5.5, max: 9.0 },
+    tds: 2100,
+    tss: 100,
+    cod: 250,
+    fluoride: 15,
+    phenols: 5,
+    phosphate: 5,
+    ammonical: 50,
+    nitrate: 50,
+    chromium: 0.1,
+  };
+
+  const getIndustryLimitsByUsername = () => {
+    const username = state?.username;
+    if (!username) return defaultLimits;
+
+    const normalizedUsername = username?.toUpperCase()?.trim();
+    if (industryLimits[normalizedUsername]) {
+      return industryLimits[normalizedUsername];
+    }
+
+    const matchedKey = Object.keys(industryLimits).find(
+      (key) =>
+        normalizedUsername.includes(key.toUpperCase()) ||
+        key.toUpperCase().includes(normalizedUsername),
+    );
+
+    return matchedKey ? industryLimits[matchedKey] : defaultLimits;
+  };
+
+  const getValueColor = (value, limit, isPH = false) => {
+    if (
+      value === null ||
+      value === undefined ||
+      value === "" ||
+      value === "-" ||
+      limit === undefined
+    ) {
+      return { isValid: true, color: "green" };
+    }
+
+    const numericValue = parseFloat(value);
+    let isValid = true;
+
+    if (isPH) {
+      isValid = numericValue >= limit?.min && numericValue <= limit?.max;
+    } else {
+      isValid = numericValue <= limit;
+    }
+
+    return {
+      isValid: isValid,
+      color: isValid ? "green" : "red",
+    };
+  };
+
+  const showParameterInfo = (param) => {
+    const value = param.value || "-";
+
+    if (value === "-") {
+      Alert.alert(param.key, "No value available.");
+      return;
+    }
+
+    if (param.isPH) {
+      const isValid =
+        parseFloat(value) >= param.limit.min &&
+        parseFloat(value) <= param.limit.max;
+
+      Alert.alert(
+        param.key,
+        isValid
+          ? `✅ Status: Normal\n\nCurrent Value: ${value}\n\nAllowed Range: ${param.limit.min} - ${param.limit.max}`
+          : `❌ Status: Out of Range\n\nCurrent Value: ${value}\n\nAllowed Range: ${param.limit.min} - ${param.limit.max}`,
+      );
+    } else {
+      const isValid = parseFloat(value) <= param.limit;
+
+      Alert.alert(
+        param.key,
+        isValid
+          ? `✅ Status: Within Limit\n\nCurrent Value: ${value}\n\nMaximum Allowed: ${param.limit}`
+          : `❌ Status: Exceeded Limit\n\nCurrent Value: ${value}\n\nMaximum Allowed: ${param.limit}\n\nExceeded By: ${(parseFloat(value) - param.limit).toFixed(2)}`,
+      );
+    }
+  };
+
+  const userIndustryLimits = getIndustryLimitsByUsername();
 
   useEffect(() => {
     GetTeamLeaders(teamLeaders, setTeamLeaders, dispatch);
@@ -251,16 +528,196 @@ const DischargeSummary = () => {
 
   const userId = useSelector((state) => state.LoginReducer.userId);
   const state = useSelector((state) => state.LoginReducer);
-  console.log("role", state.roleId);
+  // console.log("role", state.roleId);
+  const renderNoticeModal = () => (
+    <Modal
+      visible={showNoticeModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => {
+        setShowNoticeModal(false);
+        noticeFormik.resetForm();
+      }}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Send Notice</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowNoticeModal(false);
+                noticeFormik.resetForm();
+              }}
+            >
+              <Icon name="close" size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>
+                Remarks <Text style={styles.star}>*</Text>
+              </Text>
+              <TextInput
+                style={[
+                  styles.textArea,
+                  noticeFormik.errors.noticeRemarks &&
+                    noticeFormik.touched.noticeRemarks &&
+                    styles.inputError,
+                ]}
+                placeholder="Enter detailed remarks for the notice..."
+                multiline
+                numberOfLines={4}
+                value={noticeFormik.values.noticeRemarks}
+                onChangeText={noticeFormik.handleChange("noticeRemarks")}
+                onBlur={noticeFormik.handleBlur("noticeRemarks")}
+                textAlignVertical="top"
+              />
+              {noticeFormik.errors.noticeRemarks &&
+                noticeFormik.touched.noticeRemarks && (
+                  <Text style={styles.errorText}>
+                    {noticeFormik.errors.noticeRemarks}
+                  </Text>
+                )}
+            </View>
 
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>
+                Attachment <Text style={styles.star}>*</Text>
+              </Text>
+              <TouchableOpacity
+                style={[
+                  styles.uploadButton,
+                  noticeFormik.errors.noticeAttachment &&
+                    noticeFormik.touched.noticeAttachment &&
+                    styles.inputError,
+                ]}
+                onPress={() => {
+                  const path = "APEMCL/REGISTRATION/";
+                  ImageBucketRN(
+                    noticeFormik,
+                    path,
+                    "noticeAttachment",
+                    20971520,
+                    "camera",
+                    dispatch,
+                  );
+                }}
+              >
+                <Text style={styles.uploadButtonText}>Upload Attachment</Text>
+              </TouchableOpacity>
+              {noticeFormik.values.noticeAttachment && (
+                <View style={styles.filePreview}>
+                  {noticeFormik.values.noticeAttachment.match(
+                    /\.(jpg|jpeg|png)$/i,
+                  ) ? (
+                    <Image
+                      source={{ uri: noticeFormik.values.noticeAttachment }}
+                      style={styles.imagePreview}
+                    />
+                  ) : noticeFormik.values.noticeAttachment.match(/\.pdf$/i) ? (
+                    <TouchableOpacity
+                      style={styles.pdfPreview}
+                      onPress={() =>
+                        Linking.openURL(noticeFormik.values.noticeAttachment)
+                      }
+                    >
+                      <Icon
+                        name="document-text-outline"
+                        size={24}
+                        color="red"
+                      />
+                      <Text style={styles.pdfText}>Download PDF</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text style={styles.fileNameText}>
+                      {noticeFormik.values.noticeAttachment}
+                    </Text>
+                  )}
+                </View>
+              )}
+              {noticeFormik.errors.noticeAttachment &&
+                noticeFormik.touched.noticeAttachment && (
+                  <Text style={styles.errorText}>
+                    {noticeFormik.errors.noticeAttachment}
+                  </Text>
+                )}
+              <Text style={styles.hintText}>
+                Allowed formats: PDF, JPEG, PNG, DOC, DOCX (Max size: 5MB)
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={noticeFormik.handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Submit</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
   const renderCard = ({ item, index }) => {
+    const limits = userIndustryLimits;
     const isAssigned = item?.discharge_assigned_team_leader_id !== null;
 
-    console.log(
-      "tem?.discharge_assigned_team_leader_id ",
-      item?.discharge_assigned_team_leader_id,
-    );
+    // console.log(
+    //   "tem?.discharge_assigned_team_leader_id ",
+    //   item?.discharge_assigned_team_leader_id,
+    // );
+    const parameters = [
+      { key: "TDS", value: item?.tds_value, limit: limits?.tds, isPH: false },
+      { key: "TSS", value: item?.tss_value, limit: limits?.tss, isPH: false },
+      { key: "COD", value: item?.cod_value, limit: limits?.cod, isPH: false },
+      { key: "PH", value: item?.ph_value, limit: limits?.ph, isPH: true },
+      {
+        key: "Fluoride",
+        value: item?.fluoride_value,
+        limit: limits?.fluoride,
+        isPH: false,
+      },
+      {
+        key: "Phenols",
+        value: item?.phenols_value,
+        limit: limits?.phenols,
+        isPH: false,
+      },
+      {
+        key: "Phosphate",
+        value: item?.ortho_phosphate_value,
+        limit: limits?.phosphate,
+        isPH: false,
+      },
+      {
+        key: "Nitrate",
+        value: item?.nitrate_nitrogen_value,
+        limit: limits?.nitrate,
+        isPH: false,
+      },
+      {
+        key: "Ammonical",
+        value: item?.ammonical_nitrogen_value,
+        limit: limits?.ammonical,
+        isPH: false,
+      },
+      {
+        key: "Chromium",
+        value: item?.hexavalent_chromium_value,
+        limit: limits?.chromium,
+        isPH: false,
+      },
+    ];
 
+    // Check if any parameter is invalid (red)
+    const hasInvalidParameter = parameters.some((param) => {
+      const { isValid } = getValueColor(param.value, param.limit, param.isPH);
+      return !isValid;
+    });
     return (
       <View style={styles.cardItem}>
         <View style={styles.cardHeaderItem}>
@@ -391,9 +848,35 @@ const DischargeSummary = () => {
                   </Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={styles.noticeButton}>
-                <Icon name="notifications-outline" size={16} color="#000" />
-                <Text style={styles.noticeButtonText}>Notice</Text>
+              <TouchableOpacity
+                style={[
+                  styles.noticeButton,
+                  (!hasInvalidParameter || isAssigned) &&
+                    styles.noticeButtonDisabled,
+                ]}
+                onPress={() => {
+                  if (hasInvalidParameter && !isAssigned) {
+                    setShowNoticeModal(true);
+                    setRowData(item);
+                    noticeFormik.resetForm();
+                  }
+                }}
+                disabled={!hasInvalidParameter || isAssigned}
+              >
+                <Icon
+                  name="notifications-outline"
+                  size={14}
+                  color={!hasInvalidParameter || isAssigned ? "#999" : "#000"}
+                />
+                <Text
+                  style={[
+                    styles.noticeButtonText,
+                    (!hasInvalidParameter || isAssigned) &&
+                      styles.noticeButtonTextDisabled,
+                  ]}
+                >
+                  Notice
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -405,7 +888,7 @@ const DischargeSummary = () => {
   return (
     <View style={styles.container}>
       {renderAssignDutyModal()}
-
+      {renderNoticeModal()}
       <View>
         <View style={styles.cardHeader}>
           <Text style={styles.cardTitle}>
@@ -848,6 +1331,29 @@ const styles = StyleSheet.create({
     color: "#999",
     fontSize: 13,
     marginTop: 4,
+  },
+    textArea: {
+    borderWidth: 1,
+    borderColor: "#ced4da",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    backgroundColor: "#fff",
+    minHeight: 100,
+    textAlignVertical: "top",
+  },
+    uploadButton: {
+    backgroundColor: "#f8f9fa",
+    borderWidth: 1,
+    borderColor: "#ced4da",
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "center",
+  },
+  uploadButtonText: {
+    color: "#333",
+    fontSize: 14,
   },
 });
 
