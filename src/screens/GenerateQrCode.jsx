@@ -21,7 +21,10 @@ import {
   GENERATEQRCODES,
 } from "../utils/utils";
 import { useDispatch } from "react-redux";
-import * as FileSystem from "expo-file-system";
+// ✅ FIX: Use the legacy API for deprecated methods
+import * as FileSystem from "expo-file-system/legacy";
+// ✅ NEW: Import the new File and Paths classes for modern file operations
+import { File, Paths } from "expo-file-system";
 import * as MediaLibrary from "expo-media-library/legacy";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
@@ -91,7 +94,7 @@ function GenerateQrCode() {
     try {
       setDownloading(true);
 
-      // Create HTML content for PDF
+      // Create HTML content for PDF (per-page QR layout, kept for reference)
       let qrImagesHTML = "";
       qrCodes.forEach((qr, index) => {
         qrImagesHTML += `
@@ -216,27 +219,38 @@ function GenerateQrCode() {
         </html>
       `;
 
-      // Generate PDF
+      // 1. Generate the PDF (saved to cache directory by default)
       const { uri } = await Print.printToFileAsync({
         html: htmlContent,
         base64: false,
       });
 
-      // Share PDF
+      // 2. Copy the file to the app's document directory.
+      //    This is REQUIRED on Android — expo-sharing cannot always read
+      //    directly from the cache directory, which causes the
+      //    "Not allowed to read file under given URL" error.
+      // ✅ FIX: Use the new File API for copying (modern approach)
+      const fileName = `qr-codes-${Date.now()}.pdf`;
+      const sourceFile = new File(uri);
+      const destinationFile = new File(Paths.document, fileName);
+      
+      // Use the new copy method
+      sourceFile.copy(destinationFile);
+
+      // 3. Share the copied PDF
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, {
+        await Sharing.shareAsync(destinationFile.uri, {
           mimeType: "application/pdf",
           dialogTitle: "QR Codes PDF",
           UTI: "com.adobe.pdf",
         });
       } else {
-        // Fallback: share as file
-        await Share.share({
-          message: `QR Codes PDF generated. Total: ${qrCodes.length} QR Codes`,
-          url: uri,
-          title: "QR Codes PDF",
-        });
+        Alert.alert("Error", "Sharing is not available on this device");
       }
+
+      // 4. (Optional) Clean up the copied file after sharing to save space.
+      //    Remove or comment out if you want to keep the file.
+      // await FileSystem.deleteAsync(destinationFile.uri, { idempotent: true });
     } catch (error) {
       console.error("Error generating PDF:", error);
       Alert.alert("Error", "Failed to generate PDF");
@@ -260,9 +274,14 @@ function GenerateQrCode() {
       }
 
       const imageUrl = qr.qrImageUrl;
-      const fileUri = FileSystem.documentDirectory + `QR_Code_${index + 1}.png`;
+      // ✅ FIX: Use the new File API for file paths
+      const file = new File(Paths.document, `QR_Code_${index + 1}.png`);
 
-      const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
+      // ✅ FIX: Use the legacy downloadAsync (or new downloadFileAsync)
+      const downloadResult = await FileSystem.downloadAsync(
+        imageUrl, 
+        file.uri
+      );
 
       if (downloadResult.status === 200) {
         const asset = await MediaLibrary.createAssetAsync(downloadResult.uri);
@@ -289,9 +308,14 @@ function GenerateQrCode() {
   const shareQRImage = async (qr, index) => {
     try {
       const imageUrl = qr.qrImageUrl;
-      const fileUri = FileSystem.documentDirectory + `QR_Code_${index + 1}.png`;
+      // ✅ FIX: Use the new File API for file paths
+      const file = new File(Paths.document, `QR_Code_${index + 1}.png`);
 
-      const downloadResult = await FileSystem.downloadAsync(imageUrl, fileUri);
+      // ✅ FIX: Use the legacy downloadAsync
+      const downloadResult = await FileSystem.downloadAsync(
+        imageUrl, 
+        file.uri
+      );
 
       if (downloadResult.status === 200 && (await Sharing.isAvailableAsync())) {
         await Sharing.shareAsync(downloadResult.uri, {
@@ -338,10 +362,13 @@ function GenerateQrCode() {
 
       let downloaded = 0;
       for (let i = 0; i < qrCodes.length; i++) {
-        const fileUri = FileSystem.documentDirectory + `QR_Code_${i + 1}.png`;
+        // ✅ FIX: Use the new File API for file paths
+        const file = new File(Paths.document, `QR_Code_${i + 1}.png`);
+        
+        // ✅ FIX: Use the legacy downloadAsync
         const downloadResult = await FileSystem.downloadAsync(
           qrCodes[i].qrImageUrl,
-          fileUri,
+          file.uri,
         );
 
         if (downloadResult.status === 200) {
